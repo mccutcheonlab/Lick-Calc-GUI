@@ -14,12 +14,14 @@ from tkinter import messagebox
 import os
 import string
 import numpy as np
-import matplotlib
-matplotlib.use("TkAgg")
+import matplotlib as mpl
+mpl.use("TkAgg")
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
 from matplotlib.figure import Figure
-#import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
+
+mpl.rcParams['figure.subplot.wspace'] = 0.1
+mpl.rcParams['figure.subplot.left'] = 0.1
 
 # Main class for GUI
 class Window(Frame):
@@ -121,17 +123,37 @@ class Window(Frame):
                         
     def makegraphs(self):
 
-        f, (ax1, ax2, ax3) = plt.subplots(1,3)
+        # Licks over session     
+        f1, ax = plt.subplots()
         
-        jmfig.iliFig(ax1, self.lickdata)
+        sessionlicksFig(ax, self.onsetArray)
         
-        jmfig.burstlengthFig(ax2, self.lickdata)
+        canvas = FigureCanvasTkAgg(f1, self)
+        canvas.show()
+        canvas.get_tk_widget().grid(row=5, column=0, columnspan=5, sticky='ew')
+       
+        # Burst parameter figures
+        f2, (ax1, ax2, ax3) = plt.subplots(1,3)
         
+        jmfig.iliFig(ax1, self.lickdata)    
+        jmfig.burstlengthFig(ax2, self.lickdata)        
         jmfig.ibiFig(ax3, self.lickdata)
         
-        canvas = FigureCanvasTkAgg(f, self)
+        canvas = FigureCanvasTkAgg(f2, self)
         canvas.show()
-        canvas.get_tk_widget().grid(row=5, column=0, columnspan=5)
+        canvas.get_tk_widget().grid(row=6, column=0, columnspan=5, sticky='ew')
+
+        # Licks over session
+        
+def sessionlicksFig(ax, licks):
+    ax.hist(licks, range(0, 3600, 60), color='grey', alpha=0.4)          
+    yraster = [ax.get_ylim()[1]] * len(licks)
+    ax.scatter(licks, yraster, s=50, facecolors='none', edgecolors='grey')
+
+    ax.set_xticks(np.multiply([0, 10, 20, 30, 40, 50, 60],60))
+    ax.set_xticklabels(['0', '10', '20', '30', '40', '50', '60'])
+    ax.set_xlabel('Time (min)')
+    ax.set_ylabel('Licks per min')
 
 def alert(msg):
     print(msg)
