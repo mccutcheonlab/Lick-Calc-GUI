@@ -32,15 +32,15 @@ class Window(Frame):
         self.f1_style = ttk.Style()
         self.f1_style.configure('My.TFrame', background='#334353')
         self.f1 = ttk.Frame(self.master, style='My.TFrame', padding=(3, 3, 12, 12))
-
         self.init_window()
         
     def init_window(self):
         self.master.title('MedfileReader')
         self.pack(fill=BOTH, expand=1)
         
-#        self.setOptionMenu()
-                
+        #Frame for graphs
+        self.f2 = ttk.Frame(self, borderwidth=5, relief="sunken", width=200, height=300)
+
         #Set up standalone labels
         self.fileparamslbl = ttk.Label(self, text='File Parameters')
         self.calcparamslbl = ttk.Label(self, text='Calculator Parameters')
@@ -108,15 +108,16 @@ class Window(Frame):
         self.nolongILIsButton.grid(column=5, row=1)
         
         self.outputlbl.grid(column=0, row=6)
-        self.aboutlbl.grid(column=0, row=6)
+        self.aboutlbl.grid(column=0, row=7)
         
         self.analyzeButton.grid(column=6, row=0, rowspan=5, sticky=(N, S, E, W))
 
+        self.f2.grid(column=0, row=5, columnspan=7, sticky=(N,S,E,W))
         
-        self.f_init = plt.figure(figsize=(1,5))
-        canvas = FigureCanvasTkAgg(self.f_init, self)
-        canvas.show()
-        canvas.get_tk_widget().grid(row=5, column=0, columnspan=5, sticky='ew', padx=10)
+#        self.f_init = plt.figure(figsize=(1,5))
+#        canvas = FigureCanvasTkAgg(self.f_init, self)
+#        canvas.show()
+#        canvas.get_tk_widget().grid(row=5, column=0, columnspan=5, sticky='ew', padx=10)
              
         #Lines for testing
 #        self.loadmedfile()
@@ -206,7 +207,7 @@ class Window(Frame):
       
         canvas = FigureCanvasTkAgg(f, self)
         canvas.show()
-        canvas.get_tk_widget().grid(row=5, column=0, columnspan=5, sticky='ew', padx=10)
+        canvas.get_tk_widget().grid(row=5, column=0, columnspan=7, sticky=(N,S,E,W))
       
 def sessionlicksFig(ax, licks):
     ax.hist(licks, range(0,3600,60), color='grey', alpha=0.4)
