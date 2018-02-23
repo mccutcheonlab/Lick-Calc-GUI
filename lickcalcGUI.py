@@ -20,8 +20,10 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 
-mpl.rcParams['figure.subplot.wspace'] = 0.1
+mpl.rcParams['figure.subplot.wspace'] = 0.3
 mpl.rcParams['figure.subplot.left'] = 0.1
+mpl.rcParams['figure.subplot.bottom'] = 0.25
+
 
 # Main class for GUI
 class Window(Frame):
@@ -61,7 +63,7 @@ class Window(Frame):
 #        self.filename = filedialog.askopenfilename(initialdir=currdir, title='Select a Med PC file.')
         # Line for testing
         self.filename = 'C:\\Users\\jaimeHP\\Dropbox\\Python\\cas9\\cas9_medfiles\\!2016-07-19_09h16m.Subject 4'
-       
+        self.filename = 'C:\\Users\\jaimeHP\\Dropbox\\Python\\cas9\\cas9_medfiles\\!2017-06-12_10h53m.Subject thpe1.4'
         try:
             self.meddata = medfilereader(self.filename)
         except:
@@ -109,7 +111,11 @@ class Window(Frame):
         if hasattr(self, 'filename'):            
             try:
                 self.onsetArray = self.medvars[ord(self.onset.get()[0])-65]
-                self.lickdata = jmf.lickCalc(self.onsetArray, burstThreshold = burstTH, runThreshold = runTH)
+                try:
+                    self.offsetArray = self.medvars[ord(self.offset.get()[0])-65]
+                    self.lickdata = jmf.lickCalc(self.onsetArray, offset=self.offsetArray, burstThreshold = burstTH, runThreshold = runTH)
+                except:
+                    self.lickdata = jmf.lickCalc(self.onsetArray, burstThreshold = burstTH, runThreshold = runTH)
 
             except:
                 print("Error:", sys.exc_info()[0])               
@@ -124,16 +130,16 @@ class Window(Frame):
     def makegraphs(self):
 
         # Licks over session     
-        f1, ax = plt.subplots()
+        f1, ax = plt.subplots(figsize=(1,2.5))
         
         sessionlicksFig(ax, self.onsetArray)
         
         canvas = FigureCanvasTkAgg(f1, self)
         canvas.show()
-        canvas.get_tk_widget().grid(row=5, column=0, columnspan=5, sticky='ew')
+        canvas.get_tk_widget().grid(row=5, column=0, columnspan=5, sticky='ew', padx=10)
        
         # Burst parameter figures
-        f2, (ax1, ax2, ax3) = plt.subplots(1,3)
+        f2, (ax1, ax2, ax3) = plt.subplots(1,3,figsize=(1,2.5))
         
         jmfig.iliFig(ax1, self.lickdata)    
         jmfig.burstlengthFig(ax2, self.lickdata)        
@@ -141,9 +147,19 @@ class Window(Frame):
         
         canvas = FigureCanvasTkAgg(f2, self)
         canvas.show()
-        canvas.get_tk_widget().grid(row=6, column=0, columnspan=5, sticky='ew')
+        canvas.get_tk_widget().grid(row=6, column=0, columnspan=5, sticky='ew', padx=10)
 
-        # Licks over session
+        # Long licks
+#        print
+        f3, (ax1, ax2, ax3) = plt.subplots(1,3,figsize=(1,2.5))
+        jmfig.licklengthFig(ax1, self.lickdata)
+        
+        canvas = FigureCanvasTkAgg(f3, self)
+        canvas.show()
+        canvas.get_tk_widget().grid(row=7, column=0, columnspan=5, sticky='ew', padx=10)
+
+#        try:
+#            self.offsetArray = self.medvars[ord(self.onset.get()[0])-65]
         
 def sessionlicksFig(ax, licks):
     ax.hist(licks, range(0, 3600, 60), color='grey', alpha=0.4)          
@@ -207,7 +223,7 @@ def isnumeric(s):
 
 root = Tk()
 
-root.geometry('800x800')
+root.geometry('780x800')
 currdir = os.getcwd()
 currdir = 'C:\\Users\\jaimeHP\\Dropbox\\Python\\cas9\\cas9_medfiles\\'
 
