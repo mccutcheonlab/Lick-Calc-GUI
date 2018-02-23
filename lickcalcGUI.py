@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Created by J McCutcheon
 22 Feb 2018
@@ -20,7 +21,6 @@ import matplotlib.pyplot as plt
 #mpl.rcParams['figure.subplot.wspace'] = 0.3
 #mpl.rcParams['figure.subplot.left'] = 0.1
 #mpl.rcParams['figure.subplot.bottom'] = 0.25
-
 
 # Main class for GUI
 class Window(Frame):
@@ -59,8 +59,6 @@ class Window(Frame):
         canvas.get_tk_widget().grid(row=5, column=0, columnspan=5, sticky='ew', padx=10)
 
         Label(self, text='LickCalc-1.0 by J McCutcheon').grid(row=7)
-        
-        
         
         #Lines for testing
 #        self.loadmedfile()
