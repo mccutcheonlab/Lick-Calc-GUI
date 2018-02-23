@@ -7,6 +7,7 @@ To analyze data from Med PC files and calculate/output lick parameters.
 
 # Import statements
 from tkinter import *
+from tkinter import ttk
 from tkinter import filedialog
 from tkinter import messagebox
 import os
@@ -28,38 +29,95 @@ class Window(Frame):
     def __init__(self, master=None):
         Frame.__init__(self, master)               
         self.master = master
+        self.f1_style = ttk.Style()
+        self.f1_style.configure('My.TFrame', background='#334353')
+        self.f1 = ttk.Frame(self.master, style='My.TFrame', padding=(3, 3, 12, 12))
+
         self.init_window()
         
     def init_window(self):
         self.master.title('MedfileReader')
         self.pack(fill=BOTH, expand=1)
         
-        openfileButton = Button(self, text='Load Med PC File', command=self.loadmedfile)
-        openfileButton.grid(row=0, column=0)
+#        self.setOptionMenu()
+                
+        #Set up standalone labels
+        self.fileparamslbl = ttk.Label(self, text='File Parameters')
+        self.calcparamslbl = ttk.Label(self, text='Calculator Parameters')
+        self.graphparamslbl = ttk.Label(self, text='Graph Parameters')
+
+        self.session2loadlbl = ttk.Label(self, text='Session to load')
         
-        analyzeButton = Button(self, text='Analyze Data', command=self.analyze)
-        analyzeButton.grid(row=1)
+        self.onsetlbl = ttk.Label(self, text='Onset')
+        self.offsetlbl = ttk.Label(self, text='Offset')
+        self.IBthresholdlbl = ttk.Label(self, text='Interburst threshold')
+        self.IRthresholdlbl = ttk.Label(self, text='Interrun threshold')
         
+        self.nolongILIslbl = ttk.Label(self, text='Ignore Long ILIs')
+        
+        self.outputlbl = ttk.Label(self, text='Outputs')
+        self.aboutlbl = ttk.Label(self, text='LickCalc-1.0 by J McCutcheon')
+  
+        #Set up Entry variables
         self.IBthreshold = StringVar(self.master)
-        thresholdField = Entry(self, textvariable=self.IBthreshold)
-        thresholdField.insert(END,'0.5')
-        thresholdField.grid(row=3, column=3)
-        
         self.IRthreshold = StringVar(self.master)
-        runthresholdField = Entry(self, textvariable=self.IRthreshold)
-        runthresholdField.insert(END,'10')
-        runthresholdField.grid(row=4, column=3)
-         
-        Label(self, text='onset').grid(row=3)
-        Label(self, text='offset').grid(row=4)
+
+        self.IBthresholdField = Entry(self, textvariable=self.IBthreshold)
+        self.IBthresholdField.insert(END,'0.5')
+        
+        self.IRthresholdField = Entry(self, textvariable=self.IRthreshold)
+        self.IRthresholdField.insert(END,'10')
+        
+        # Set up Dropdown buttons
+        self.OPTIONS = ['None']
+        self.onset = StringVar(self.master)
+        self.onsetButton = ttk.OptionMenu(self, self.onset, *self.OPTIONS)    
+        self.offset = StringVar(self.master)
+        self.offsetButton = ttk.OptionMenu(self, self.offset, *self.OPTIONS)
+
+        #Set up Boolean variables
+        self.nolongILIs = BooleanVar(self.master)
+        self.nolongILIs.set(False)
+        self.nolongILIsButton = ttk.Checkbutton(self, variable=self.nolongILIs, onvalue=True)
+        
+        # Set up Buttons
+        self.loadmedButton = ttk.Button(self, text='Load Med PC File', command=self.loadmedfile)
+        self.loadtxtButton = ttk.Button(self, text='Load .txt File', command=self.loadtxtfile)
+        self.analyzeButton = ttk.Button(self, text='Analyze Data', command=self.analyze)
+       
+        #Place items in grid
+        self.fileparamslbl.grid(column=0, row=0, columnspan=2)
+        self.calcparamslbl.grid(column=2, row=0, columnspan=2)
+        self.graphparamslbl.grid(column=4, row=0, columnspan=2)
+        
+        self.loadmedButton.grid(column=0, row=1)
+        self.session2loadlbl.grid(column=0, row=2)
+        self.loadtxtButton.grid(column=0, row=3)
+        
+        self.onsetlbl.grid(column=2, row=1, sticky=E)
+        self.offsetlbl.grid(column=2, row=2, sticky=E)
+        self.IBthresholdlbl.grid(column=2, row=3, sticky=E)
+        self.IRthresholdlbl.grid(column=2, row=4, sticky=E)
+        
+        self.onsetButton.grid(column=3, row=1, sticky=(W,E))
+        self.offsetButton.grid(column=3, row=2, sticky=(W,E))
+        self.IBthresholdField.grid(column=3, row=3)
+        self.IRthresholdField.grid(column=3, row=4)
+        
+        self.nolongILIslbl.grid(column=4, row=1)
+        self.nolongILIsButton.grid(column=5, row=1)
+        
+        self.outputlbl.grid(column=0, row=6)
+        self.aboutlbl.grid(column=0, row=6)
+        
+        self.analyzeButton.grid(column=6, row=0, rowspan=5, sticky=(N, S, E, W))
+
         
         self.f_init = plt.figure(figsize=(1,5))
         canvas = FigureCanvasTkAgg(self.f_init, self)
         canvas.show()
         canvas.get_tk_widget().grid(row=5, column=0, columnspan=5, sticky='ew', padx=10)
-
-        Label(self, text='LickCalc-1.0 by J McCutcheon').grid(row=7)
-        
+             
         #Lines for testing
 #        self.loadmedfile()
 
@@ -77,24 +135,22 @@ class Window(Frame):
         self.medvars = [x for x in self.meddata if len(x)>1]
               
         try:
-            self.setOptionMenu()
-            self.showfilename()
+            self.updateOptionMenu()
         except TypeError:
             alert("No valid variables to analyze (e.g. arrays with more than one value")
 
+    def loadtxtfile(self):
+        alert("Option not available yet - coming soon!")
+        
     def showfilename(self):
         text = Label(self, text=self.filename)
         text.grid(row=0, column=2)
 
-    def setOptionMenu(self):
+    def updateOptionMenu(self):
         varlens = [len(x) for x in self.medvars]
-        OPTIONS = [x+': '+str(y) for (x, y) in zip(list(string.ascii_uppercase), varlens)]
-
-        self.onset = StringVar(self.master)
-        onsetBtn = OptionMenu(self, self.onset, *OPTIONS).grid(row=3, column=1)
-    
-        self.offset = StringVar(self.master)
-        offsetBtn = OptionMenu(self, self.offset, *OPTIONS).grid(row=4, column=1)
+        options = [x+': '+str(y) for (x, y) in zip(list(string.ascii_uppercase), varlens)]
+        self.onsetButton = OptionMenu(self, self.onset, *options).grid(column=3, row=1, sticky=(W,E))
+        self.offsetButton = OptionMenu(self, self.offset, *options).grid(column=3, row=2, sticky=(W,E))
     
     def analyze(self):
         print('Analyzing...')
