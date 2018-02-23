@@ -63,13 +63,13 @@ class Window(Frame):
         
         
         #Lines for testing
-        self.loadmedfile()
+#        self.loadmedfile()
 
     def loadmedfile(self):
-#        self.filename = filedialog.askopenfilename(initialdir=currdir, title='Select a Med PC file.')
+        self.filename = filedialog.askopenfilename(initialdir=currdir, title='Select a Med PC file.')
         # Line for testing
-        self.filename = 'C:\\Users\\jaimeHP\\Dropbox\\Python\\cas9\\cas9_medfiles\\!2016-07-19_09h16m.Subject 4'
-        self.filename = 'C:\\Users\\jaimeHP\\Dropbox\\Python\\cas9\\cas9_medfiles\\!2017-06-12_10h53m.Subject thpe1.4'
+#        self.filename = 'C:\\Users\\jaimeHP\\Dropbox\\Python\\cas9\\cas9_medfiles\\!2016-07-19_09h16m.Subject 4'
+#        self.filename = 'C:\\Users\\jaimeHP\\Dropbox\\Python\\cas9\\cas9_medfiles\\!2017-06-12_10h53m.Subject thpe1.4'
         try:
             self.meddata = medfilereader(self.filename)
         except:
@@ -135,38 +135,28 @@ class Window(Frame):
                         
     def makegraphs(self):
         
-        self.f = plt.figure(figsize=(1,5))
-
-        # Licks over session     
-#        f1, ax = plt.subplots(figsize=(1,2.5))
+        f = plt.figure(figsize=(1,5))    
         grid = plt.GridSpec(2, 3, wspace=0.5, hspace=0.5)
-        self.ax1 = self.f.add_subplot(grid[0,:])
-        self.ax2 = self.f.add_subplot(grid[1,0])
-        self.ax3 = self.f.add_subplot(grid[1,1])
-        self.ax4 = self.f.add_subplot(grid[1,2])
-        
-        sessionlicksFig(self.ax1, self.onsetArray)
-        
-        canvas = FigureCanvasTkAgg(self.f, self)
+        ax1 = f.add_subplot(grid[0,:])
+        ax2 = f.add_subplot(grid[1,0])
+        ax3 = f.add_subplot(grid[1,1])
+        ax4 = f.add_subplot(grid[1,2])
+
+        # Licks over session 
+        sessionlicksFig(ax1, self.onsetArray)
+       
+        # Lick parameter figures       
+        iliFig(ax2, self.lickdata)    
+        burstlengthFig(ax3, self.lickdata)        
+        licklengthFig(ax4, self.lickdata)
+      
+        canvas = FigureCanvasTkAgg(f, self)
         canvas.show()
         canvas.get_tk_widget().grid(row=5, column=0, columnspan=5, sticky='ew', padx=10)
-       
-#        # Burst parameter figures
-#        f2, (ax1, ax2, ax3) = plt.subplots(1,3,figsize=(1,2.5))
-#        
-#        iliFig(ax1, self.lickdata)    
-#        burstlengthFig(ax2, self.lickdata)        
-#        licklengthFig(ax3, self.lickdata)
-#        
-#        canvas = FigureCanvasTkAgg(f2, self)
-#        canvas.show()
-#        canvas.get_tk_widget().grid(row=6, column=0, columnspan=5, sticky='ew', padx=10)
-#       
+      
 def sessionlicksFig(ax, licks):
     ax.hist(licks, range(0,3600,60), color='grey', alpha=0.4)
-#    lim = max(np.histogram(licks, range(0,3600,60))[0])
     yraster = [ax.get_ylim()[1]] * len(licks)
-#    yraster = [lim*1.05] * len(licks)
     ax.scatter(licks, yraster, s=50, facecolors='none', edgecolors='grey')
 
     ax.set_xticks(np.multiply([0, 10, 20, 30, 40, 50, 60],60))
