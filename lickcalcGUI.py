@@ -4,9 +4,6 @@ Created by J McCutcheon
 To analyze data from Med PC files and calculate/output lick parameters.
 """
 
-import JM_general_functions as jmf
-import JM_custom_figs as jmfig
-
 # Import statements
 from tkinter import *
 from tkinter import filedialog
@@ -113,9 +110,9 @@ class Window(Frame):
                 self.onsetArray = self.medvars[ord(self.onset.get()[0])-65]
                 try:
                     self.offsetArray = self.medvars[ord(self.offset.get()[0])-65]
-                    self.lickdata = jmf.lickCalc(self.onsetArray, offset=self.offsetArray, burstThreshold = burstTH, runThreshold = runTH)
+                    self.lickdata = lickCalc(self.onsetArray, offset=self.offsetArray, burstThreshold = burstTH, runThreshold = runTH)
                 except:
-                    self.lickdata = jmf.lickCalc(self.onsetArray, burstThreshold = burstTH, runThreshold = runTH)
+                    self.lickdata = lickCalc(self.onsetArray, burstThreshold = burstTH, runThreshold = runTH)
 
             except:
                 print("Error:", sys.exc_info()[0])               
@@ -141,9 +138,9 @@ class Window(Frame):
         # Burst parameter figures
         f2, (ax1, ax2, ax3) = plt.subplots(1,3,figsize=(1,2.5))
         
-        jmfig.iliFig(ax1, self.lickdata)    
-        jmfig.burstlengthFig(ax2, self.lickdata)        
-        jmfig.ibiFig(ax3, self.lickdata)
+        iliFig(ax1, self.lickdata)    
+        burstlengthFig(ax2, self.lickdata)        
+        ibiFig(ax3, self.lickdata)
         
         canvas = FigureCanvasTkAgg(f2, self)
         canvas.show()
@@ -152,7 +149,7 @@ class Window(Frame):
         # Long licks
 #        print
         f3, (ax1, ax2, ax3) = plt.subplots(1,3,figsize=(1,2.5))
-        jmfig.licklengthFig(ax1, self.lickdata)
+        licklengthFig(ax1, self.lickdata)
         
         canvas = FigureCanvasTkAgg(f3, self)
         canvas.show()
@@ -220,6 +217,116 @@ def isnumeric(s):
         return x
     except ValueError:
         return float('nan')
+
+"""
+This function will calculate data for bursts from a train of licks. The threshold
+for bursts and clusters can be set. It returns all data as a dictionary.
+"""
+def lickCalc(licks, offset = [], burstThreshold = 0.25, runThreshold = 10, 
+             binsize=60, histDensity = False):
+    # makes dictionary of data relating to licks and bursts
+    if type(licks) != np.ndarray or type(offset) != np.ndarray:
+        try:
+            licks = np.array(licks)
+            offset = np.array(offset)
+        except:
+            print('Licks and offsets need to be arrays and unable to easily convert.')
+            return
+
+    lickData = {}
+    
+    if len(offset) > 0:
+        lickData['licklength'] = offset - licks
+        lickData['longlicks'] = [x for x in lickData['licklength'] if x > 0.3]
+    else:
+        lickData['licklength'] = []
+        lickData['longlicks'] = []
+
+    lickData['licks'] = np.concatenate([[0], licks])
+    lickData['ilis'] = np.diff(lickData['licks'])
+    lickData['freq'] = 1/np.mean([x for x in lickData['ilis'] if x < burstThreshold])
+    lickData['total'] = len(licks)
+    
+    # Calculates start, end, number of licks and time for each BURST 
+    lickData['bStart'] = [val for i, val in enumerate(lickData['licks']) if (val - lickData['licks'][i-1] > burstThreshold)]  
+    lickData['bInd'] = [i for i, val in enumerate(lickData['licks']) if (val - lickData['licks'][i-1] > burstThreshold)]
+    lickData['bEnd'] = [lickData['licks'][i-1] for i in lickData['bInd'][1:]]
+    lickData['bEnd'].append(lickData['licks'][-1])
+
+    lickData['bLicks'] = np.diff(lickData['bInd'] + [len(lickData['licks'])])    
+    lickData['bTime'] = np.subtract(lickData['bEnd'], lickData['bStart'])
+    lickData['bNum'] = len(lickData['bStart'])
+    if lickData['bNum'] > 0:
+        lickData['bMean'] = np.nanmean(lickData['bLicks'])
+    else:
+        lickData['bMean'] = 0
+    
+    lickData['bILIs'] = [x for x in lickData['ilis'] if x > burstThreshold]
+
+    # Calculates start, end, number of licks and time for each RUN
+    lickData['rStart'] = [val for i, val in enumerate(lickData['licks']) if (val - lickData['licks'][i-1] > runThreshold)]  
+    lickData['rInd'] = [i for i, val in enumerate(lickData['licks']) if (val - lickData['licks'][i-1] > runThreshold)]
+    lickData['rEnd'] = [lickData['licks'][i-1] for i in lickData['rInd'][1:]]
+    lickData['rEnd'].append(lickData['licks'][-1])
+
+    lickData['rLicks'] = np.diff(lickData['rInd'] + [len(lickData['licks'])])    
+    lickData['rTime'] = np.subtract(lickData['rEnd'], lickData['rStart'])
+    lickData['rNum'] = len(lickData['rStart'])
+
+    lickData['rILIs'] = [x for x in lickData['ilis'] if x > runThreshold]
+    try:
+        lickData['hist'] = np.histogram(lickData['licks'][1:], 
+                                    range=(0, 3600), bins=int((3600/binsize)),
+                                          density=histDensity)[0]
+    except TypeError:
+        print('Problem making histograms of lick data')
+        
+    return lickData
+
+def licklengthFig(ax, data, contents = '', color='grey'):          
+    if len(data['longlicks']) > 0:
+        longlicklabel = str(len(data['longlicks'])) + ' long licks,\n' +'max = ' + '%.2f' % max(data['longlicks']) + ' s.'        
+    else:
+        longlicklabel = 'No long licks.'
+    
+    figlabel = str(len(data['licklength'])) + ' total licks.\n' + longlicklabel
+
+    ax.hist(data['licklength'], np.arange(0, 0.3, 0.01), color=color)
+    ax.text(0.9, 0.9, figlabel, ha='right', va='top', transform = ax.transAxes)
+    ax.set_xlabel('Lick length (s)')
+    ax.set_ylabel('Frequency')
+    ax.set_title(contents)
+    
+def iliFig(ax, data, contents = '', color='grey'):
+    ax.hist(data['ilis'], np.arange(0, 0.5, 0.02), color=color)
+    
+    figlabel = '%.2f Hz' % data['freq']
+    ax.text(0.9, 0.9, figlabel, ha='right', va='top', transform = ax.transAxes)
+    
+    ax.set_xlabel('Interlick interval (s)')
+    ax.set_ylabel('Frequency')
+    ax.set_title(contents)
+    
+def burstlengthFig(ax, data, contents='', color3rdbar=False):
+    
+    figlabel = (str(data['bNum']) + ' total bursts\n' +
+                str('%.2f' % data['bMean']) + ' licks/burst.')
+                                                
+    n, bins, patches = ax.hist(data['bLicks'], range(0, 20), normed=1)
+    ax.set_xticks(range(1,20))
+    ax.set_xlabel('Licks per burst')
+    ax.set_ylabel('Frequency')
+    ax.set_xticks([1,2,3,4,5,10,15])
+#        ax.text(0.9, 0.9, figlabel1, ha='right', va='center', transform = ax.transAxes)
+    ax.text(0.9, 0.8, figlabel, ha='right', va='center', transform = ax.transAxes)
+    
+    if color3rdbar == True:
+        patches[3].set_fc('r')
+    
+def ibiFig(ax, data, contents = ''):
+    ax.hist(data['bILIs'], range(0, 20), normed=1)
+    ax.set_xlabel('Interburst intervals')
+    ax.set_ylabel('Frequency')
 
 root = Tk()
 
