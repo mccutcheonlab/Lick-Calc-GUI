@@ -17,9 +17,9 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 
-mpl.rcParams['figure.subplot.wspace'] = 0.3
-mpl.rcParams['figure.subplot.left'] = 0.1
-mpl.rcParams['figure.subplot.bottom'] = 0.25
+#mpl.rcParams['figure.subplot.wspace'] = 0.3
+#mpl.rcParams['figure.subplot.left'] = 0.1
+#mpl.rcParams['figure.subplot.bottom'] = 0.25
 
 
 # Main class for GUI
@@ -52,6 +52,15 @@ class Window(Frame):
          
         Label(self, text='onset').grid(row=3)
         Label(self, text='offset').grid(row=4)
+        
+        self.f_init = plt.figure(figsize=(1,5))
+        canvas = FigureCanvasTkAgg(self.f_init, self)
+        canvas.show()
+        canvas.get_tk_widget().grid(row=5, column=0, columnspan=5, sticky='ew', padx=10)
+
+        Label(self, text='LickCalc-1.0 by J McCutcheon').grid(row=7)
+        
+        
         
         #Lines for testing
         self.loadmedfile()
@@ -125,42 +134,39 @@ class Window(Frame):
         self.makegraphs()
                         
     def makegraphs(self):
+        
+        self.f = plt.figure(figsize=(1,5))
 
         # Licks over session     
-        f1, ax = plt.subplots(figsize=(1,2.5))
+#        f1, ax = plt.subplots(figsize=(1,2.5))
+        grid = plt.GridSpec(2, 3, wspace=0.5, hspace=0.5)
+        self.ax1 = self.f.add_subplot(grid[0,:])
+        self.ax2 = self.f.add_subplot(grid[1,0])
+        self.ax3 = self.f.add_subplot(grid[1,1])
+        self.ax4 = self.f.add_subplot(grid[1,2])
         
-        sessionlicksFig(ax, self.onsetArray)
+        sessionlicksFig(self.ax1, self.onsetArray)
         
-        canvas = FigureCanvasTkAgg(f1, self)
+        canvas = FigureCanvasTkAgg(self.f, self)
         canvas.show()
         canvas.get_tk_widget().grid(row=5, column=0, columnspan=5, sticky='ew', padx=10)
        
-        # Burst parameter figures
-        f2, (ax1, ax2, ax3) = plt.subplots(1,3,figsize=(1,2.5))
-        
-        iliFig(ax1, self.lickdata)    
-        burstlengthFig(ax2, self.lickdata)        
-        ibiFig(ax3, self.lickdata)
-        
-        canvas = FigureCanvasTkAgg(f2, self)
-        canvas.show()
-        canvas.get_tk_widget().grid(row=6, column=0, columnspan=5, sticky='ew', padx=10)
-
-        # Long licks
-#        print
-        f3, (ax1, ax2, ax3) = plt.subplots(1,3,figsize=(1,2.5))
-        licklengthFig(ax1, self.lickdata)
-        
-        canvas = FigureCanvasTkAgg(f3, self)
-        canvas.show()
-        canvas.get_tk_widget().grid(row=7, column=0, columnspan=5, sticky='ew', padx=10)
-
-#        try:
-#            self.offsetArray = self.medvars[ord(self.onset.get()[0])-65]
-        
+#        # Burst parameter figures
+#        f2, (ax1, ax2, ax3) = plt.subplots(1,3,figsize=(1,2.5))
+#        
+#        iliFig(ax1, self.lickdata)    
+#        burstlengthFig(ax2, self.lickdata)        
+#        licklengthFig(ax3, self.lickdata)
+#        
+#        canvas = FigureCanvasTkAgg(f2, self)
+#        canvas.show()
+#        canvas.get_tk_widget().grid(row=6, column=0, columnspan=5, sticky='ew', padx=10)
+#       
 def sessionlicksFig(ax, licks):
-    ax.hist(licks, range(0, 3600, 60), color='grey', alpha=0.4)          
+    ax.hist(licks, range(0,3600,60), color='grey', alpha=0.4)
+#    lim = max(np.histogram(licks, range(0,3600,60))[0])
     yraster = [ax.get_ylim()[1]] * len(licks)
+#    yraster = [lim*1.05] * len(licks)
     ax.scatter(licks, yraster, s=50, facecolors='none', edgecolors='grey')
 
     ax.set_xticks(np.multiply([0, 10, 20, 30, 40, 50, 60],60))
@@ -330,7 +336,7 @@ def ibiFig(ax, data, contents = ''):
 
 root = Tk()
 
-root.geometry('780x800')
+root.geometry('780x600')
 currdir = os.getcwd()
 currdir = 'C:\\Users\\jaimeHP\\Dropbox\\Python\\cas9\\cas9_medfiles\\'
 
