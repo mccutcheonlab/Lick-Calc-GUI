@@ -18,10 +18,9 @@ mpl.use("TkAgg")
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
-
-#mpl.rcParams['figure.subplot.wspace'] = 0.3
-#mpl.rcParams['figure.subplot.left'] = 0.1
-#mpl.rcParams['figure.subplot.bottom'] = 0.25
+from matplotlib.backends.backend_pdf import PdfPages
+import ntpath#
+import csv
 
 # Main class for GUI
 class Window(Frame):
@@ -45,8 +44,6 @@ class Window(Frame):
         self.fileparamslbl = ttk.Label(self, text='File Parameters')
         self.calcparamslbl = ttk.Label(self, text='Calculator Parameters')
         self.graphparamslbl = ttk.Label(self, text='Graph Parameters')
-
-        self.session2loadlbl = ttk.Label(self, text='Session to load')
         
         self.onsetlbl = ttk.Label(self, text='Onset')
         self.offsetlbl = ttk.Label(self, text='Offset')
@@ -59,6 +56,10 @@ class Window(Frame):
         self.aboutlbl = ttk.Label(self, text='LickCalc-1.0 by J McCutcheon')
   
         #Set up Entry variables
+        self.shortfilename = StringVar(self.master)
+        self.shortfilename.set('No file loaded')
+        self.filenamelbl = ttk.Label(self, textvariable=self.shortfilename)
+        
         self.IBthreshold = StringVar(self.master)
         self.IRthreshold = StringVar(self.master)
 
@@ -85,14 +86,17 @@ class Window(Frame):
         self.loadtxtButton = ttk.Button(self, text='Load .txt File', command=self.loadtxtfile)
         self.analyzeButton = ttk.Button(self, text='Analyze Data', command=self.analyze)
        
+        self.pdfButton = ttk.Button(self, text='PDF', command=self.makePDF)
+        self.textsummaryButton = ttk.Button(self, text='Text Summary', command=self.maketextsummary)
+        
         #Place items in grid
         self.fileparamslbl.grid(column=0, row=0, columnspan=2)
         self.calcparamslbl.grid(column=2, row=0, columnspan=2)
         self.graphparamslbl.grid(column=4, row=0, columnspan=2)
         
-        self.loadmedButton.grid(column=0, row=1)
-        self.session2loadlbl.grid(column=0, row=2)
-        self.loadtxtButton.grid(column=0, row=3)
+        self.loadmedButton.grid(column=0, row=1, sticky=(W,E))
+        self.loadtxtButton.grid(column=1, row=1, sticky=(W,E))
+        self.filenamelbl.grid(column=0, row=2, columnspan=2, sticky=(W,E))
         
         self.onsetlbl.grid(column=2, row=1, sticky=E)
         self.offsetlbl.grid(column=2, row=2, sticky=E)
@@ -108,17 +112,15 @@ class Window(Frame):
         self.nolongILIsButton.grid(column=5, row=1)
         
         self.outputlbl.grid(column=0, row=6)
+        self.pdfButton.grid(column=1, row=6)
+        self.textsummaryButton.grid(column=2, row=6)
+        
         self.aboutlbl.grid(column=0, row=7)
         
         self.analyzeButton.grid(column=6, row=0, rowspan=5, sticky=(N, S, E, W))
 
         self.f2.grid(column=0, row=5, columnspan=7, sticky=(N,S,E,W))
-        
-#        self.f_init = plt.figure(figsize=(1,5))
-#        canvas = FigureCanvasTkAgg(self.f_init, self)
-#        canvas.show()
-#        canvas.get_tk_widget().grid(row=5, column=0, columnspan=5, sticky='ew', padx=10)
-             
+                    
         #Lines for testing
 #        self.loadmedfile()
 
@@ -128,11 +130,14 @@ class Window(Frame):
 #        self.filename = 'C:\\Users\\jaimeHP\\Dropbox\\Python\\cas9\\cas9_medfiles\\!2016-07-19_09h16m.Subject 4'
 #        self.filename = 'C:\\Users\\jaimeHP\\Dropbox\\Python\\cas9\\cas9_medfiles\\!2017-06-12_10h53m.Subject thpe1.4'
         try:
-            self.meddata = medfilereader(self.filename)
+            if len(checknsessions(self.filename)) > 1:
+                alert('More than one session in file. Analysing session 1.')
+            else:                    
+                self.meddata = medfilereader(self.filename)
         except:
             alert("Error", "Problem reading file and extracting data. File may not be properly formatted - see Help for advice.")
             return
-        
+        self.shortfilename.set(ntpath.basename(self.filename))
         self.medvars = [x for x in self.meddata if len(x)>1]
               
         try:
@@ -179,6 +184,7 @@ class Window(Frame):
                     self.lickdata = lickCalc(self.onsetArray, burstThreshold = burstTH, runThreshold = runTH)
 
             except:
+                alert('Have you picked an onset array yet?')
                 print("Error:", sys.exc_info()[0])               
                 raise
         
@@ -190,7 +196,8 @@ class Window(Frame):
                         
     def makegraphs(self):
         
-        f = plt.figure(figsize=(1,5))    
+        f = plt.figure(figsize=(8.27, 5))
+        plt.suptitle(self.shortfilename.get())
         grid = plt.GridSpec(2, 3, wspace=0.5, hspace=0.5)
         ax1 = f.add_subplot(grid[0,:])
         ax2 = f.add_subplot(grid[1,0])
@@ -200,8 +207,8 @@ class Window(Frame):
         # Licks over session 
         sessionlicksFig(ax1, self.onsetArray)
        
-        # Lick parameter figures       
-        iliFig(ax2, self.lickdata)    
+        # Lick parameter figures
+        iliFig(ax2, self.lickdata, onlyshilis=self.nolongILIs.get()) 
         burstlengthFig(ax3, self.lickdata)        
         licklengthFig(ax4, self.lickdata)
       
@@ -209,6 +216,36 @@ class Window(Frame):
         canvas.show()
         canvas.get_tk_widget().grid(row=5, column=0, columnspan=7, sticky=(N,S,E,W))
       
+        return f
+    
+    def makePDF(self):
+        try:
+            pdfFig = self.makegraphs()
+            pdf_pages = PdfPages(self.filename + '.pdf')
+            pdf_pages.savefig(pdfFig)
+            pdf_pages.close()
+        except:
+            print("Error:", sys.exc_info()[0])
+            alert('Problem making PDF!')
+        
+    def maketextsummary(self):
+        try:
+            d = [('Filename',self.shortfilename.get()),
+                 ('Total licks',self.lickdata['total']),
+                 ('Frequency',self.lickdata['freq']),
+                 ('Number of bursts',self.lickdata['bNum']),
+                 ('Licks per burst',self.lickdata['bMean'])]
+            
+            with open(self.filename+'-text_summary.csv', 'w', newline='') as file:
+                csv_out = csv.writer(file)
+                csv_out.writerow(['Parameter', 'Value'])
+                for row in d:
+                    csv_out.writerow(row)
+
+        except:
+            alert('Problem making text summary!')
+            print("Error:", sys.exc_info()[0])
+        
 def sessionlicksFig(ax, licks):
     ax.hist(licks, range(0,3600,60), color='grey', alpha=0.4)
     yraster = [ax.get_ylim()[1]] * len(licks)
@@ -222,6 +259,14 @@ def sessionlicksFig(ax, licks):
 def alert(msg):
     print(msg)
     messagebox.showinfo('Error', msg)
+
+def checknsessions(filename):
+    f = open(filename, 'r')
+    f.seek(0)
+    filerows = f.readlines()[8:]
+    datarows = [isnumeric(x) for x in filerows]
+    matches = [i for i,x in enumerate(datarows) if x == 0.3]
+    return matches
 
 def medfilereader(filename, varsToExtract = 'all',
                   sessionToExtract = 1,
@@ -295,6 +340,7 @@ def lickCalc(licks, offset = [], burstThreshold = 0.25, runThreshold = 10,
 
     lickData['licks'] = np.concatenate([[0], licks])
     lickData['ilis'] = np.diff(lickData['licks'])
+    lickData['shilis'] = [x for x in lickData['ilis'] if x < burstThreshold]
     lickData['freq'] = 1/np.mean([x for x in lickData['ilis'] if x < burstThreshold])
     lickData['total'] = len(licks)
     
@@ -348,8 +394,11 @@ def licklengthFig(ax, data, contents = '', color='grey'):
     ax.set_ylabel('Frequency')
     ax.set_title(contents)
     
-def iliFig(ax, data, contents = '', color='grey'):
-    ax.hist(data['ilis'], np.arange(0, 0.5, 0.02), color=color)
+def iliFig(ax, data, contents = '', color='grey', onlyshilis=False):
+    if onlyshilis == True:
+        ax.hist(data['shilis'], np.arange(0, 0.5, 0.02), color=color)        
+    else:
+        ax.hist(data['ilis'], np.arange(0, 0.5, 0.02), color=color)
     
     figlabel = '%.2f Hz' % data['freq']
     ax.text(0.9, 0.9, figlabel, ha='right', va='top', transform = ax.transAxes)
@@ -381,7 +430,7 @@ def ibiFig(ax, data, contents = ''):
 
 root = Tk()
 
-root.geometry('780x600')
+#root.geometry('780x600')
 currdir = os.getcwd()
 currdir = 'C:\\Users\\jaimeHP\\Dropbox\\Python\\cas9\\cas9_medfiles\\'
 
