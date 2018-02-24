@@ -7,6 +7,7 @@ To analyze data from Med PC files and calculate/output lick parameters.
 
 # Import statements
 from tkinter import *
+from tkinter import ttk
 from tkinter import filedialog
 from tkinter import messagebox
 import os
@@ -17,10 +18,9 @@ mpl.use("TkAgg")
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
-
-#mpl.rcParams['figure.subplot.wspace'] = 0.3
-#mpl.rcParams['figure.subplot.left'] = 0.1
-#mpl.rcParams['figure.subplot.bottom'] = 0.25
+from matplotlib.backends.backend_pdf import PdfPages
+import ntpath#
+import csv
 
 # Main class for GUI
 class Window(Frame):
@@ -28,38 +28,99 @@ class Window(Frame):
     def __init__(self, master=None):
         Frame.__init__(self, master)               
         self.master = master
+        self.f1_style = ttk.Style()
+        self.f1_style.configure('My.TFrame', background='#334353')
+        self.f1 = ttk.Frame(self.master, style='My.TFrame', padding=(3, 3, 12, 12))
         self.init_window()
         
     def init_window(self):
         self.master.title('MedfileReader')
         self.pack(fill=BOTH, expand=1)
         
-        openfileButton = Button(self, text='Load Med PC File', command=self.loadmedfile)
-        openfileButton.grid(row=0, column=0)
+        #Frame for graphs
+        self.f2 = ttk.Frame(self, borderwidth=5, relief="sunken", width=200, height=300)
+
+        #Set up standalone labels
+        self.fileparamslbl = ttk.Label(self, text='File Parameters')
+        self.calcparamslbl = ttk.Label(self, text='Calculator Parameters')
+        self.graphparamslbl = ttk.Label(self, text='Graph Parameters')
         
-        analyzeButton = Button(self, text='Analyze Data', command=self.analyze)
-        analyzeButton.grid(row=1)
+        self.onsetlbl = ttk.Label(self, text='Onset')
+        self.offsetlbl = ttk.Label(self, text='Offset')
+        self.IBthresholdlbl = ttk.Label(self, text='Interburst threshold')
+        self.IRthresholdlbl = ttk.Label(self, text='Interrun threshold')
+        
+        self.nolongILIslbl = ttk.Label(self, text='Ignore Long ILIs')
+        
+        self.outputlbl = ttk.Label(self, text='Outputs')
+        self.aboutlbl = ttk.Label(self, text='LickCalc-1.0 by J McCutcheon')
+  
+        #Set up Entry variables
+        self.shortfilename = StringVar(self.master)
+        self.shortfilename.set('No file loaded')
+        self.filenamelbl = ttk.Label(self, textvariable=self.shortfilename)
         
         self.IBthreshold = StringVar(self.master)
-        thresholdField = Entry(self, textvariable=self.IBthreshold)
-        thresholdField.insert(END,'0.5')
-        thresholdField.grid(row=3, column=3)
-        
         self.IRthreshold = StringVar(self.master)
-        runthresholdField = Entry(self, textvariable=self.IRthreshold)
-        runthresholdField.insert(END,'10')
-        runthresholdField.grid(row=4, column=3)
-         
-        Label(self, text='onset').grid(row=3)
-        Label(self, text='offset').grid(row=4)
-        
-        self.f_init = plt.figure(figsize=(1,5))
-        canvas = FigureCanvasTkAgg(self.f_init, self)
-        canvas.show()
-        canvas.get_tk_widget().grid(row=5, column=0, columnspan=5, sticky='ew', padx=10)
 
-        Label(self, text='LickCalc-1.0 by J McCutcheon').grid(row=7)
+        self.IBthresholdField = Entry(self, textvariable=self.IBthreshold)
+        self.IBthresholdField.insert(END,'0.5')
         
+        self.IRthresholdField = Entry(self, textvariable=self.IRthreshold)
+        self.IRthresholdField.insert(END,'10')
+        
+        # Set up Dropdown buttons
+        self.OPTIONS = ['None']
+        self.onset = StringVar(self.master)
+        self.onsetButton = ttk.OptionMenu(self, self.onset, *self.OPTIONS)    
+        self.offset = StringVar(self.master)
+        self.offsetButton = ttk.OptionMenu(self, self.offset, *self.OPTIONS)
+
+        #Set up Boolean variables
+        self.nolongILIs = BooleanVar(self.master)
+        self.nolongILIs.set(False)
+        self.nolongILIsButton = ttk.Checkbutton(self, variable=self.nolongILIs, onvalue=True)
+        
+        # Set up Buttons
+        self.loadmedButton = ttk.Button(self, text='Load Med PC File', command=self.loadmedfile)
+        self.loadtxtButton = ttk.Button(self, text='Load .txt File', command=self.loadtxtfile)
+        self.analyzeButton = ttk.Button(self, text='Analyze Data', command=self.analyze)
+       
+        self.pdfButton = ttk.Button(self, text='PDF', command=self.makePDF)
+        self.textsummaryButton = ttk.Button(self, text='Text Summary', command=self.maketextsummary)
+        
+        #Place items in grid
+        self.fileparamslbl.grid(column=0, row=0, columnspan=2)
+        self.calcparamslbl.grid(column=2, row=0, columnspan=2)
+        self.graphparamslbl.grid(column=4, row=0, columnspan=2)
+        
+        self.loadmedButton.grid(column=0, row=1, sticky=(W,E))
+        self.loadtxtButton.grid(column=1, row=1, sticky=(W,E))
+        self.filenamelbl.grid(column=0, row=2, columnspan=2, sticky=(W,E))
+        
+        self.onsetlbl.grid(column=2, row=1, sticky=E)
+        self.offsetlbl.grid(column=2, row=2, sticky=E)
+        self.IBthresholdlbl.grid(column=2, row=3, sticky=E)
+        self.IRthresholdlbl.grid(column=2, row=4, sticky=E)
+        
+        self.onsetButton.grid(column=3, row=1, sticky=(W,E))
+        self.offsetButton.grid(column=3, row=2, sticky=(W,E))
+        self.IBthresholdField.grid(column=3, row=3)
+        self.IRthresholdField.grid(column=3, row=4)
+        
+        self.nolongILIslbl.grid(column=4, row=1)
+        self.nolongILIsButton.grid(column=5, row=1)
+        
+        self.outputlbl.grid(column=0, row=6)
+        self.pdfButton.grid(column=1, row=6)
+        self.textsummaryButton.grid(column=2, row=6)
+        
+        self.aboutlbl.grid(column=0, row=7)
+        
+        self.analyzeButton.grid(column=6, row=0, rowspan=5, sticky=(N, S, E, W))
+
+        self.f2.grid(column=0, row=5, columnspan=7, sticky=(N,S,E,W))
+                    
         #Lines for testing
 #        self.loadmedfile()
 
@@ -69,32 +130,33 @@ class Window(Frame):
 #        self.filename = 'C:\\Users\\jaimeHP\\Dropbox\\Python\\cas9\\cas9_medfiles\\!2016-07-19_09h16m.Subject 4'
 #        self.filename = 'C:\\Users\\jaimeHP\\Dropbox\\Python\\cas9\\cas9_medfiles\\!2017-06-12_10h53m.Subject thpe1.4'
         try:
-            self.meddata = medfilereader(self.filename)
+            if len(checknsessions(self.filename)) > 1:
+                alert('More than one session in file. Analysing session 1.')
+            else:                    
+                self.meddata = medfilereader(self.filename)
         except:
             alert("Error", "Problem reading file and extracting data. File may not be properly formatted - see Help for advice.")
             return
-        
+        self.shortfilename.set(ntpath.basename(self.filename))
         self.medvars = [x for x in self.meddata if len(x)>1]
               
         try:
-            self.setOptionMenu()
-            self.showfilename()
+            self.updateOptionMenu()
         except TypeError:
             alert("No valid variables to analyze (e.g. arrays with more than one value")
 
+    def loadtxtfile(self):
+        alert("Option not available yet - coming soon!")
+        
     def showfilename(self):
         text = Label(self, text=self.filename)
         text.grid(row=0, column=2)
 
-    def setOptionMenu(self):
+    def updateOptionMenu(self):
         varlens = [len(x) for x in self.medvars]
-        OPTIONS = [x+': '+str(y) for (x, y) in zip(list(string.ascii_uppercase), varlens)]
-
-        self.onset = StringVar(self.master)
-        onsetBtn = OptionMenu(self, self.onset, *OPTIONS).grid(row=3, column=1)
-    
-        self.offset = StringVar(self.master)
-        offsetBtn = OptionMenu(self, self.offset, *OPTIONS).grid(row=4, column=1)
+        options = [x+': '+str(y) for (x, y) in zip(list(string.ascii_uppercase), varlens)]
+        self.onsetButton = OptionMenu(self, self.onset, *options).grid(column=3, row=1, sticky=(W,E))
+        self.offsetButton = OptionMenu(self, self.offset, *options).grid(column=3, row=2, sticky=(W,E))
     
     def analyze(self):
         print('Analyzing...')
@@ -122,6 +184,7 @@ class Window(Frame):
                     self.lickdata = lickCalc(self.onsetArray, burstThreshold = burstTH, runThreshold = runTH)
 
             except:
+                alert('Have you picked an onset array yet?')
                 print("Error:", sys.exc_info()[0])               
                 raise
         
@@ -133,7 +196,8 @@ class Window(Frame):
                         
     def makegraphs(self):
         
-        f = plt.figure(figsize=(1,5))    
+        f = plt.figure(figsize=(8.27, 5))
+        plt.suptitle(self.shortfilename.get())
         grid = plt.GridSpec(2, 3, wspace=0.5, hspace=0.5)
         ax1 = f.add_subplot(grid[0,:])
         ax2 = f.add_subplot(grid[1,0])
@@ -143,15 +207,45 @@ class Window(Frame):
         # Licks over session 
         sessionlicksFig(ax1, self.onsetArray)
        
-        # Lick parameter figures       
-        iliFig(ax2, self.lickdata)    
+        # Lick parameter figures
+        iliFig(ax2, self.lickdata, onlyshilis=self.nolongILIs.get()) 
         burstlengthFig(ax3, self.lickdata)        
         licklengthFig(ax4, self.lickdata)
       
         canvas = FigureCanvasTkAgg(f, self)
         canvas.show()
-        canvas.get_tk_widget().grid(row=5, column=0, columnspan=5, sticky='ew', padx=10)
+        canvas.get_tk_widget().grid(row=5, column=0, columnspan=7, sticky=(N,S,E,W))
       
+        return f
+    
+    def makePDF(self):
+        try:
+            pdfFig = self.makegraphs()
+            pdf_pages = PdfPages(self.filename + '.pdf')
+            pdf_pages.savefig(pdfFig)
+            pdf_pages.close()
+        except:
+            print("Error:", sys.exc_info()[0])
+            alert('Problem making PDF!')
+        
+    def maketextsummary(self):
+        try:
+            d = [('Filename',self.shortfilename.get()),
+                 ('Total licks',self.lickdata['total']),
+                 ('Frequency',self.lickdata['freq']),
+                 ('Number of bursts',self.lickdata['bNum']),
+                 ('Licks per burst',self.lickdata['bMean'])]
+            
+            with open(self.filename+'-text_summary.csv', 'w', newline='') as file:
+                csv_out = csv.writer(file)
+                csv_out.writerow(['Parameter', 'Value'])
+                for row in d:
+                    csv_out.writerow(row)
+
+        except:
+            alert('Problem making text summary!')
+            print("Error:", sys.exc_info()[0])
+        
 def sessionlicksFig(ax, licks):
     ax.hist(licks, range(0,3600,60), color='grey', alpha=0.4)
     yraster = [ax.get_ylim()[1]] * len(licks)
@@ -165,6 +259,14 @@ def sessionlicksFig(ax, licks):
 def alert(msg):
     print(msg)
     messagebox.showinfo('Error', msg)
+
+def checknsessions(filename):
+    f = open(filename, 'r')
+    f.seek(0)
+    filerows = f.readlines()[8:]
+    datarows = [isnumeric(x) for x in filerows]
+    matches = [i for i,x in enumerate(datarows) if x == 0.3]
+    return matches
 
 def medfilereader(filename, varsToExtract = 'all',
                   sessionToExtract = 1,
@@ -238,6 +340,7 @@ def lickCalc(licks, offset = [], burstThreshold = 0.25, runThreshold = 10,
 
     lickData['licks'] = np.concatenate([[0], licks])
     lickData['ilis'] = np.diff(lickData['licks'])
+    lickData['shilis'] = [x for x in lickData['ilis'] if x < burstThreshold]
     lickData['freq'] = 1/np.mean([x for x in lickData['ilis'] if x < burstThreshold])
     lickData['total'] = len(licks)
     
@@ -291,8 +394,11 @@ def licklengthFig(ax, data, contents = '', color='grey'):
     ax.set_ylabel('Frequency')
     ax.set_title(contents)
     
-def iliFig(ax, data, contents = '', color='grey'):
-    ax.hist(data['ilis'], np.arange(0, 0.5, 0.02), color=color)
+def iliFig(ax, data, contents = '', color='grey', onlyshilis=False):
+    if onlyshilis == True:
+        ax.hist(data['shilis'], np.arange(0, 0.5, 0.02), color=color)        
+    else:
+        ax.hist(data['ilis'], np.arange(0, 0.5, 0.02), color=color)
     
     figlabel = '%.2f Hz' % data['freq']
     ax.text(0.9, 0.9, figlabel, ha='right', va='top', transform = ax.transAxes)
@@ -324,7 +430,7 @@ def ibiFig(ax, data, contents = ''):
 
 root = Tk()
 
-root.geometry('780x600')
+#root.geometry('780x600')
 currdir = os.getcwd()
 currdir = 'C:\\Users\\jaimeHP\\Dropbox\\Python\\cas9\\cas9_medfiles\\'
 
