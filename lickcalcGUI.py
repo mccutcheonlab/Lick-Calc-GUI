@@ -83,7 +83,7 @@ class Window(Frame):
         
         # Set up Buttons
         self.loadmedButton = ttk.Button(self, text='Load Med PC File', command=self.loadmedfile)
-        self.loadtxtButton = ttk.Button(self, text='Load .txt File', command=self.loadtxtfile)
+        self.loadcsvButton = ttk.Button(self, text='Load CSV File', command=self.loadcsvfile)
         self.analyzeButton = ttk.Button(self, text='Analyze Data', command=self.analyze)
        
         self.pdfButton = ttk.Button(self, text='PDF', command=self.makePDF)
@@ -95,7 +95,7 @@ class Window(Frame):
         self.graphparamslbl.grid(column=4, row=0, columnspan=2)
         
         self.loadmedButton.grid(column=0, row=1, sticky=(W,E))
-        self.loadtxtButton.grid(column=1, row=1, sticky=(W,E))
+        self.loadcsvButton.grid(column=1, row=1, sticky=(W,E))
         self.filenamelbl.grid(column=0, row=2, columnspan=2, sticky=(W,E))
         
         self.onsetlbl.grid(column=2, row=1, sticky=E)
@@ -145,8 +145,25 @@ class Window(Frame):
         except TypeError:
             alert("No valid variables to analyze (e.g. arrays with more than one value")
 
-    def loadtxtfile(self):
-        alert("Option not available yet - coming soon!")
+    def loadcsvfile(self):
+#        try:
+        self.filename = filedialog.askopenfilename(initialdir=currdir, title='Select a CSV file.')
+        self.csvvars = {}
+        with open(self.filename, newline='') as myFile:
+            reader = csv.DictReader(myFile)
+            cols = reader.fieldnames
+            for col in cols:
+                myFile.seek(0)
+                self.csvvars[col] = []
+                for row in reader:
+                    self.csvvars[col].append(row[col])
+        
+#        options = [x+': '+str(y) for (x, y) in zip(list(string.ascii_uppercase), varlens)]
+#        self.onsetButton = OptionMenu(self, self.onset, *options).grid(column=3, row=1, sticky=(W,E))
+#        self.offsetButton = OptionMenu(self, self.offset, *options).grid(column=3, row=2, sticky=(W,E))
+#        self.csvvars[col].append = row[col]
+#        except:
+#             alert("Option not available yet - coming soon!")
         
     def showfilename(self):
         text = Label(self, text=self.filename)
