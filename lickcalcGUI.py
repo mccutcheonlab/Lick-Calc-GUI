@@ -480,7 +480,6 @@ def ibiFig(ax, data, contents = ''):
 
 root = Tk()
 
-#root.geometry('780x600')
 currdir = os.getcwd()
 currdir = 'C:\\Users\\jaimeHP\\Dropbox\\Python\\cas9\\cas9_medfiles\\'
 
