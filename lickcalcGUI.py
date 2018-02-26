@@ -134,12 +134,11 @@ class Window(Frame):
             if len(checknsessions(self.filename)) > 1:
                 alert('More than one session in file. Analysing session 1.')
             else:                    
-                self.medvars = medfilereader_licks(self.filename, remove_var_header = False)
+                self.loaded_vars = medfilereader_licks(self.filename)
         except:
             alert("Error", "Problem reading file and extracting data. File may not be properly formatted - see Help for advice.")
             return
         self.shortfilename.set(ntpath.basename(self.filename))
-#        self.medvars = [x for x in self.meddata if len(x)>1]
               
         try:
             self.updateOptionMenu()
@@ -149,39 +148,28 @@ class Window(Frame):
     def loadcsvfile(self):
 #        try:
         self.filename = filedialog.askopenfilename(initialdir=currdir, title='Select a CSV file.')
-        self.csvvars = {}
+        self.loaded_vars = {}
         with open(self.filename, newline='') as myFile:
             reader = csv.DictReader(myFile)
             cols = reader.fieldnames
             for col in cols:
                 myFile.seek(0)
-                self.csvvars[col] = []
+                self.loaded_vars[col] = []
                 for row in reader:
-                    self.csvvars[col].append(row[col])
+                    self.loaded_vars[col].append(row[col])
         
-#        options = [x+': '+str(y) for (x, y) in zip(list(string.ascii_uppercase), varlens)]
-#        self.onsetButton = OptionMenu(self, self.onset, *options).grid(column=3, row=1, sticky=(W,E))
-#        self.offsetButton = OptionMenu(self, self.offset, *options).grid(column=3, row=2, sticky=(W,E))
-#        self.csvvars[col].append = row[col]
-#        except:
-#             alert("Option not available yet - coming soon!")
+        try:
+            self.updateOptionMenu()
+        except TypeError:
+            alert("No valid variables to analyze (e.g. arrays with more than one value")
 
     def updateOptionMenu(self):
-        print(type(self.medvars))
-        print(self.medvars)
-#        for var in self.medvars.keys():
-#            
-#        varlens = [len(x) for x in self.medvars]
-#        print(varlens)
-        options = [x+': '+str(len(self.medvars[x])) for x in self.medvars]
-        print(options)
-#        options = [x+': '+str(y) for (x, y) in zip(list(string.ascii_uppercase), varlens)]
+        options = [x+': '+str(len(self.loaded_vars[x])) for x in self.loaded_vars]
         self.onsetButton = OptionMenu(self, self.onset, *options).grid(column=3, row=1, sticky=(W,E))
         self.offsetButton = OptionMenu(self, self.offset, *options).grid(column=3, row=2, sticky=(W,E))
     
     def analyze(self):
-        print('Analyzing...')
-        
+        print('Analyzing...')       
         # Check inputs
         try:
             burstTH = float(self.IBthreshold.get())
@@ -197,9 +185,9 @@ class Window(Frame):
                
         if hasattr(self, 'filename'):            
             try:
-                self.onsetArray = self.medvars[ord(self.onset.get()[0])-65]
+                self.onsetArray = self.loaded_vars[ord(self.onset.get()[0])-65]
                 try:
-                    self.offsetArray = self.medvars[ord(self.offset.get()[0])-65]
+                    self.offsetArray = self.loaded_vars[ord(self.offset.get()[0])-65]
                     self.lickdata = lickCalc(self.onsetArray, offset=self.offsetArray, burstThreshold = burstTH, runThreshold = runTH)
                 except:
                     self.lickdata = lickCalc(self.onsetArray, burstThreshold = burstTH, runThreshold = runTH)
@@ -316,9 +304,9 @@ def medfilereader_licks(filename,
         k = k + medvarsN
     print(medvars)
     
-#    if remove_var_header == True:
-#        for val in medvars.values():
-#            val.pop(0)
+    if remove_var_header == True:
+        for val in medvars.values():
+            val.pop(0)
 
     return medvars
 
