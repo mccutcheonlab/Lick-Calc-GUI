@@ -8,8 +8,14 @@ import collections
 import numpy as np
 import string
 
-d = {'a':[1,2,3], 'c':[6,7,8]}
+str1 = 'A: 5353'
+str2 = 'onset: 663'
 
-options = [x+': '+str(len(d[x])) for x in d]
+print(str1.split(':')[0])
 
-print(options)
+
+
+#str = "<>I'm Tom."
+#temp = str.split("I",1)
+#temp[0]=temp[0].replace("<>","")
+#str = "I".join(temp)

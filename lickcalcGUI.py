@@ -153,10 +153,13 @@ class Window(Frame):
             reader = csv.DictReader(myFile)
             cols = reader.fieldnames
             for col in cols:
-                myFile.seek(0)
                 self.loaded_vars[col] = []
+                myFile.seek(0)
                 for row in reader:
-                    self.loaded_vars[col].append(row[col])
+                    try:
+                        self.loaded_vars[col].append(float(row[col]))
+                    except:
+                        pass
         
         try:
             self.updateOptionMenu()
@@ -185,9 +188,10 @@ class Window(Frame):
                
         if hasattr(self, 'filename'):            
             try:
-                self.onsetArray = self.loaded_vars[ord(self.onset.get()[0])-65]
+                self.onsetArray = self.loaded_vars[self.onset.get().split(':')[0]]
+                print(self.onsetArray)
                 try:
-                    self.offsetArray = self.loaded_vars[ord(self.offset.get()[0])-65]
+                    self.offsetArray = self.loaded_vars[self.offset.get().split(':')[0]]
                     self.lickdata = lickCalc(self.onsetArray, offset=self.offsetArray, burstThreshold = burstTH, runThreshold = runTH)
                 except:
                     self.lickdata = lickCalc(self.onsetArray, burstThreshold = burstTH, runThreshold = runTH)
@@ -302,7 +306,6 @@ def medfilereader_licks(filename,
         if medvarsN > 1:
             medvars[string.ascii_uppercase[i]] = datarows[k:k + int(medvarsN)]
         k = k + medvarsN
-    print(medvars)
     
     if remove_var_header == True:
         for val in medvars.values():
