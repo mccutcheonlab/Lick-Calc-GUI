@@ -27,10 +27,12 @@ import collections
 class Window(Frame):
 
     def __init__(self, master=None):
-        Frame.__init__(self, master)               
-        self.master = master
         self.f1_style = ttk.Style()
         self.f1_style.configure('My.TFrame', background='#334353')
+
+
+        Frame.__init__(self, master)               
+        self.master = master
         self.f1 = ttk.Frame(self.master, style='My.TFrame', padding=(3, 3, 12, 12))
         self.init_window()
         
