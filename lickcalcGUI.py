@@ -83,10 +83,12 @@ class Window(Frame):
         self.nolongILIsButton = ttk.Checkbutton(self, variable=self.nolongILIs, onvalue=True)
         
         # Set up Buttons
-        self.loadmedButton = ttk.Button(self, text='Load Med PC File', command=self.loadmedfile)
-        self.loadcsvButton = ttk.Button(self, text='Load CSV File', command=self.loadcsvfile)
+        self.loadmedButton = ttk.Button(self, text='Load Med PC File', command=self.openmedfile)
+        self.loadcsvButton = ttk.Button(self, text='Load CSV File', command=self.opencsvfile)
         self.analyzeButton = ttk.Button(self, text='Analyze Data', command=self.analyze)
-       
+        self.prevButton = ttk.Button(self, text='Previous', command=lambda: self.load_adj_files(delta=-1))
+        self.nextButton = ttk.Button(self, text='Next', command=lambda: self.load_adj_files(delta=1))
+                
         self.pdfButton = ttk.Button(self, text='PDF', command=self.makePDF)
         self.textsummaryButton = ttk.Button(self, text='Text Summary', command=self.maketextsummary)
         
@@ -98,7 +100,9 @@ class Window(Frame):
         self.loadmedButton.grid(column=0, row=1, sticky=(W,E))
         self.loadcsvButton.grid(column=1, row=1, sticky=(W,E))
         self.filenamelbl.grid(column=0, row=2, columnspan=2, sticky=(W,E))
-        
+        self.prevButton.grid(column=0, row=3)
+        self.nextButton.grid(column=1, row=3)
+
         self.onsetlbl.grid(column=2, row=1, sticky=E)
         self.offsetlbl.grid(column=2, row=2, sticky=E)
         self.IBthresholdlbl.grid(column=2, row=3, sticky=E)
@@ -122,54 +126,80 @@ class Window(Frame):
 
         self.f2.grid(column=0, row=5, columnspan=7, sticky=(N,S,E,W))
                     
-        #Lines for testing
-#        self.loadmedfile()
-
-    def loadmedfile(self):
+    def openmedfile(self):
         self.filename = filedialog.askopenfilename(initialdir=currdir, title='Select a Med PC file.')
-        # Line for testing
-#        self.filename = 'C:\\Users\\jaimeHP\\Dropbox\\Python\\cas9\\cas9_medfiles\\!2016-07-19_09h16m.Subject 4'
-#        self.filename = 'C:\\Users\\jaimeHP\\Dropbox\\Python\\cas9\\cas9_medfiles\\!2017-06-12_10h53m.Subject thpe1.4'
+        self.list_of_files = []
+        self.loadmedfile()
+        
+    def loadmedfile(self):        
         try:
             if len(checknsessions(self.filename)) > 1:
                 alert('More than one session in file. Analysing session 1.')
             else:                    
                 self.loaded_vars = medfilereader_licks(self.filename)
         except:
-            alert("Error", "Problem reading file and extracting data. File may not be properly formatted - see Help for advice.")
+            alert("Problem reading file and extracting data. File may not be properly formatted - see Help for advice.")
             return
-        self.shortfilename.set(ntpath.basename(self.filename))
-              
+         
         try:
             self.updateOptionMenu()
         except TypeError:
             alert("No valid variables to analyze (e.g. arrays with more than one value")
-
-    def loadcsvfile(self):
-#        try:
-        self.filename = filedialog.askopenfilename(initialdir=currdir, title='Select a CSV file.')
-        self.loaded_vars = {}
-        with open(self.filename, newline='') as myFile:
-            reader = csv.DictReader(myFile)
-            cols = reader.fieldnames
-            for col in cols:
-                self.loaded_vars[col] = []
-                myFile.seek(0)
-                for row in reader:
-                    try:
-                        self.loaded_vars[col].append(float(row[col]))
-                    except:
-                        pass
         
+        self.currentfiletype = 'med'
+        self.shortfilename.set(ntpath.basename(self.filename))
+        
+    def opencsvfile(self):
+        self.filename = filedialog.askopenfilename(initialdir=currdir, title='Select a CSV file.')
+        self.list_of_files = []
+        self.loadcsvfile()
+        
+    def loadcsvfile(self):               
+        try:            
+            with open(self.filename, newline='') as myFile:
+                reader = csv.DictReader(myFile)
+                cols = reader.fieldnames
+                self.loaded_vars = {}
+                for col in cols:
+                    self.loaded_vars[col] = []
+                    myFile.seek(0)
+                    for row in reader:
+                        try:
+                            self.loaded_vars[col].append(float(row[col]))
+                        except:
+                            pass 
+        except:
+            alert('Cannot load data from selected file. Is it a CSV?')
+            return
+                        
         try:
             self.updateOptionMenu()
         except TypeError:
             alert("No valid variables to analyze (e.g. arrays with more than one value")
-
+        
+        self.currentfiletype = 'csv'
+        self.shortfilename.set(ntpath.basename(self.filename))
+        
     def updateOptionMenu(self):
         options = [x+': '+str(len(self.loaded_vars[x])) for x in self.loaded_vars]
         self.onsetButton = OptionMenu(self, self.onset, *options).grid(column=3, row=1, sticky=(W,E))
         self.offsetButton = OptionMenu(self, self.offset, *options).grid(column=3, row=2, sticky=(W,E))
+
+    def load_adj_files(self,delta=1): #delta+1 = next, -1=prev        
+        try:
+            if not self.list_of_files:
+                self.currpath = ntpath.dirname(self.filename)
+                self.list_of_files = os.listdir(self.currpath)
+            index = [x[0] for x in enumerate(self.list_of_files) if x[1] == self.shortfilename.get()]
+            newindex = index[0] + delta
+            self.filename = os.path.join(self.currpath, self.list_of_files[newindex])
+            
+            if self.currentfiletype == 'med':
+                self.loadmedfile()
+            if self.currentfiletype == 'csv':
+                self.loadcsvfile()
+        except:
+            alert('Problem loading next file. It might be at the end of the folder or in the wrong format.')
     
     def analyze(self):
         print('Analyzing...')       
@@ -452,6 +482,9 @@ app = Window(root)
 root.lift()
 root.mainloop()
 
+# Files for for testing
+#        self.filename = 'C:\\Users\\jaimeHP\\Dropbox\\Python\\cas9\\cas9_medfiles\\!2016-07-19_09h16m.Subject 4'
+#        self.filename = 'C:\\Users\\jaimeHP\\Dropbox\\Python\\cas9\\cas9_medfiles\\!2017-06-12_10h53m.Subject thpe1.4'
 
 
 
