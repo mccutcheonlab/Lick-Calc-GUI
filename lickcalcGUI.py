@@ -232,9 +232,11 @@ class Window(Frame):
         return f
     
     def makePDF(self):
+        self.folder = get_location()
+        savefile = self.folder + '//' + self.shortfilename.get() + '.pdf'
         try:
             pdfFig = self.makegraphs()
-            pdf_pages = PdfPages(self.filename + '.pdf')
+            pdf_pages = PdfPages(savefile)
             pdf_pages.savefig(pdfFig)
             pdf_pages.close()
         except:
@@ -242,6 +244,8 @@ class Window(Frame):
             alert('Problem making PDF!')
         
     def maketextsummary(self):
+        self.folder = get_location()
+        savefile = self.folder + '//' + self.shortfilename.get() + '-text_summary.csv'
         try:
             d = [('Filename',self.shortfilename.get()),
                  ('Total licks',self.lickdata['total']),
@@ -249,7 +253,7 @@ class Window(Frame):
                  ('Number of bursts',self.lickdata['bNum']),
                  ('Licks per burst',self.lickdata['bMean'])]
             
-            with open(self.filename+'-text_summary.csv', 'w', newline='') as file:
+            with open(savefile, 'w', newline='') as file:
                 csv_out = csv.writer(file)
                 csv_out.writerow(['Parameter', 'Value'])
                 for row in d:
@@ -258,7 +262,11 @@ class Window(Frame):
         except:
             alert('Problem making text summary!')
             print("Error:", sys.exc_info()[0])
-        
+
+def get_location():
+    loc = filedialog.askdirectory(initialdir=currdir, title='Select a save folder.')
+    return loc
+
 def sessionlicksFig(ax, licks):
     ax.hist(licks, range(0,3600,60), color='grey', alpha=0.4)
     yraster = [ax.get_ylim()[1]] * len(licks)

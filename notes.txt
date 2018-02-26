@@ -1,0 +1,18 @@
+To make into executable
+
+install pyinstaller (pip install pyinstaller)
+navigate to appropriate directory and run
+pyinstaller lickcalcGUI.py
+
+try this first to see if it works
+
+then to make single file and windowed run
+
+pyinstaller --onefile --windowed lickcalcGUI
+
+may not want --onefile or --windowed options as they take longer to load.
+
+maybe best option is --onefile but NOT --windowed so that at least the console window pops up
+
+--icon='iconfile.ico'
+
