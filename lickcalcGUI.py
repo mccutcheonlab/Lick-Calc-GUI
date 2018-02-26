@@ -27,24 +27,31 @@ import collections
 class Window(Frame):
 
     def __init__(self, master=None):
-        Frame.__init__(self, master)               
-        self.master = master
-        self.f1_style = ttk.Style()
-        self.f1_style.configure('My.TFrame', background='#334353')
-        self.f1 = ttk.Frame(self.master, style='My.TFrame', padding=(3, 3, 12, 12))
-        self.init_window()
+        f1 = ttk.Style()
+        f1.configure('.', background='powder blue', padding=5)
+        f1.configure('TButton', width=15, sticky=(E,W))
+        f1.configure('TMenubutton', background='light cyan', padding=0)
+        f1.configure('header.TLabel', font='Helvetica 12')
+        f2 = ttk.Style()
+        f2.configure('inner.TFrame', background='light cyan')
         
+        ttk.Frame.__init__(self, master, style='TFrame', padding=(10, 10, 15, 15))               
+        self.master = master
+        
+        self.init_window()
+
     def init_window(self):
         self.master.title('MedfileReader')
         self.pack(fill=BOTH, expand=1)
         
         #Frame for graphs
-        self.f2 = ttk.Frame(self, borderwidth=5, relief="sunken", width=200, height=300)
+        self.f2 = ttk.Frame(self, style='inner.TFrame', borderwidth=5,
+                            relief="sunken", width=200, height=300)
 
         #Set up standalone labels
-        self.fileparamslbl = ttk.Label(self, text='File Parameters')
-        self.calcparamslbl = ttk.Label(self, text='Calculator Parameters')
-        self.graphparamslbl = ttk.Label(self, text='Graph Parameters')
+        self.fileparamslbl = ttk.Label(self, text='File Parameters', style='header.TLabel')
+        self.calcparamslbl = ttk.Label(self, text='Calculator Parameters', style='header.TLabel')
+        self.graphparamslbl = ttk.Label(self, text='Graph Parameters', style='header.TLabel')
         
         self.onsetlbl = ttk.Label(self, text='Onset')
         self.offsetlbl = ttk.Label(self, text='Offset')
@@ -64,10 +71,10 @@ class Window(Frame):
         self.IBthreshold = StringVar(self.master)
         self.IRthreshold = StringVar(self.master)
 
-        self.IBthresholdField = Entry(self, textvariable=self.IBthreshold)
+        self.IBthresholdField = ttk.Entry(self, textvariable=self.IBthreshold)
         self.IBthresholdField.insert(END,'0.5')
         
-        self.IRthresholdField = Entry(self, textvariable=self.IRthreshold)
+        self.IRthresholdField = ttk.Entry(self, textvariable=self.IRthreshold)
         self.IRthresholdField.insert(END,'10')
         
         # Set up Dropdown buttons
@@ -83,7 +90,7 @@ class Window(Frame):
         self.nolongILIsButton = ttk.Checkbutton(self, variable=self.nolongILIs, onvalue=True)
         
         # Set up Buttons
-        self.loadmedButton = ttk.Button(self, text='Load Med PC File', command=self.openmedfile)
+        self.loadmedButton = ttk.Button(self, text='Load Med File', command=self.openmedfile)
         self.loadcsvButton = ttk.Button(self, text='Load CSV File', command=self.opencsvfile)
         self.analyzeButton = ttk.Button(self, text='Analyze Data', command=self.analyze)
         self.prevButton = ttk.Button(self, text='Previous', command=lambda: self.load_adj_files(delta=-1))
@@ -108,21 +115,21 @@ class Window(Frame):
         self.IBthresholdlbl.grid(column=2, row=3, sticky=E)
         self.IRthresholdlbl.grid(column=2, row=4, sticky=E)
         
-        self.onsetButton.grid(column=3, row=1, sticky=(W,E))
-        self.offsetButton.grid(column=3, row=2, sticky=(W,E))
-        self.IBthresholdField.grid(column=3, row=3)
-        self.IRthresholdField.grid(column=3, row=4)
+        self.onsetButton.grid(column=3, row=1, sticky=(W,E), pady=5)
+        self.offsetButton.grid(column=3, row=2, sticky=(W,E), pady=5)
+        self.IBthresholdField.grid(column=3, row=3, sticky=(W,E))
+        self.IRthresholdField.grid(column=3, row=4, sticky=(W,E))
         
         self.nolongILIslbl.grid(column=4, row=1)
         self.nolongILIsButton.grid(column=5, row=1)
         
-        self.outputlbl.grid(column=0, row=6)
-        self.pdfButton.grid(column=1, row=6)
-        self.textsummaryButton.grid(column=2, row=6)
+        self.outputlbl.grid(column=0, row=6, sticky=(W,E), pady=5)
+        self.pdfButton.grid(column=1, row=6, sticky=(W,E), pady=5)
+        self.textsummaryButton.grid(column=2, row=6, sticky=(W,E), pady=5)
         
-        self.aboutlbl.grid(column=0, row=7)
+        self.aboutlbl.grid(column=0, row=7, columnspan=7, sticky=W)
         
-        self.analyzeButton.grid(column=6, row=0, rowspan=5, sticky=(N, S, E, W))
+        self.analyzeButton.grid(column=6, row=1, rowspan=4, sticky=(N, S, E, W))
 
         self.f2.grid(column=0, row=5, columnspan=7, sticky=(N,S,E,W))
                     
@@ -182,8 +189,8 @@ class Window(Frame):
         
     def updateOptionMenu(self):
         options = [x+': '+str(len(self.loaded_vars[x])) for x in self.loaded_vars]
-        self.onsetButton = OptionMenu(self, self.onset, *options).grid(column=3, row=1, sticky=(W,E))
-        self.offsetButton = OptionMenu(self, self.offset, *options).grid(column=3, row=2, sticky=(W,E))
+        self.onsetButton = ttk.OptionMenu(self, self.onset, *options).grid(column=3, row=1, sticky=(W,E))
+        self.offsetButton = ttk.OptionMenu(self, self.offset, *options).grid(column=3, row=2, sticky=(W,E))
 
     def load_adj_files(self,delta=1): #delta+1 = next, -1=prev        
         try:
@@ -219,7 +226,6 @@ class Window(Frame):
         if hasattr(self, 'filename'):            
             try:
                 self.onsetArray = self.loaded_vars[self.onset.get().split(':')[0]]
-                print(self.onsetArray)
                 try:
                     self.offsetArray = self.loaded_vars[self.offset.get().split(':')[0]]
                     self.lickdata = lickCalc(self.onsetArray, offset=self.offsetArray, burstThreshold = burstTH, runThreshold = runTH)
