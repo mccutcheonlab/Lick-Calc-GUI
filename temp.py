@@ -4,19 +4,12 @@ Created on Sat Feb 24 16:32:58 2018
 
 @author: jaimeHP
 """
-import csv
+import collections
+import numpy as np
+import string
 
+d = {'a':[1,2,3], 'c':[6,7,8]}
 
-fff = 'hey ho'
-ttt = str(203)
-bbb = 543
+options = [x+': '+str(len(d[x])) for x in d]
 
-d = [('Filename', fff),('Total licks', ttt),
-     ('Burst number', bbb)]
-
-
-with open('C:\\Users\\jaimeHP\\Dropbox\\Python\\cas9\\cas9_medfiles\\testfile.csv', 'w', newline='') as file:
-    csv_out = csv.writer(file)
-    csv_out.writerow(['Parameter', 'Value'])
-    for row in d:
-        csv_out.writerow(row)
+print(options)

@@ -21,6 +21,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import ntpath#
 import csv
+import collections
 
 # Main class for GUI
 class Window(Frame):
@@ -133,12 +134,12 @@ class Window(Frame):
             if len(checknsessions(self.filename)) > 1:
                 alert('More than one session in file. Analysing session 1.')
             else:                    
-                self.meddata = medfilereader(self.filename)
+                self.medvars = medfilereader_licks(self.filename, remove_var_header = False)
         except:
             alert("Error", "Problem reading file and extracting data. File may not be properly formatted - see Help for advice.")
             return
         self.shortfilename.set(ntpath.basename(self.filename))
-        self.medvars = [x for x in self.meddata if len(x)>1]
+#        self.medvars = [x for x in self.meddata if len(x)>1]
               
         try:
             self.updateOptionMenu()
@@ -164,14 +165,17 @@ class Window(Frame):
 #        self.csvvars[col].append = row[col]
 #        except:
 #             alert("Option not available yet - coming soon!")
-        
-    def showfilename(self):
-        text = Label(self, text=self.filename)
-        text.grid(row=0, column=2)
 
     def updateOptionMenu(self):
-        varlens = [len(x) for x in self.medvars]
-        options = [x+': '+str(y) for (x, y) in zip(list(string.ascii_uppercase), varlens)]
+        print(type(self.medvars))
+        print(self.medvars)
+#        for var in self.medvars.keys():
+#            
+#        varlens = [len(x) for x in self.medvars]
+#        print(varlens)
+        options = [x+': '+str(len(self.medvars[x])) for x in self.medvars]
+        print(options)
+#        options = [x+': '+str(y) for (x, y) in zip(list(string.ascii_uppercase), varlens)]
         self.onsetButton = OptionMenu(self, self.onset, *options).grid(column=3, row=1, sticky=(W,E))
         self.offsetButton = OptionMenu(self, self.offset, *options).grid(column=3, row=2, sticky=(W,E))
     
@@ -285,14 +289,10 @@ def checknsessions(filename):
     matches = [i for i,x in enumerate(datarows) if x == 0.3]
     return matches
 
-def medfilereader(filename, varsToExtract = 'all',
+def medfilereader_licks(filename,
                   sessionToExtract = 1,
                   verbose = False,
-                  remove_var_header = False):
-    if varsToExtract == 'all':
-        numVarsToExtract = np.arange(0,26)
-    else:
-        numVarsToExtract = [ord(x)-97 for x in varsToExtract]
+                  remove_var_header = True):
     
     f = open(filename, 'r')
     f.seek(0)
@@ -305,24 +305,22 @@ def medfilereader(filename, varsToExtract = 'all',
         print('There are ' + str(len(matches)) + ' sessions in ' + filename)
         print('Analyzing session ' + str(sessionToExtract))
     
-    varstart = matches[sessionToExtract - 1]
-    medvars = [[] for n in range(26)]
-    
+    varstart = matches[sessionToExtract - 1]    
+    medvars = {}
+   
     k = int(varstart + 27)
     for i in range(26):
         medvarsN = int(datarows[varstart + i + 1])
-        
-        medvars[i] = datarows[k:k + int(medvarsN)]
+        if medvarsN > 1:
+            medvars[string.ascii_uppercase[i]] = datarows[k:k + int(medvarsN)]
         k = k + medvarsN
-        
-    if remove_var_header == True:
-        varsToReturn = [medvars[i][1:] for i in numVarsToExtract]
-    else:
-        varsToReturn = [medvars[i] for i in numVarsToExtract]
+    print(medvars)
+    
+#    if remove_var_header == True:
+#        for val in medvars.values():
+#            val.pop(0)
 
-    if np.shape(varsToReturn)[0] == 1:
-        varsToReturn = varsToReturn[0]
-    return varsToReturn
+    return medvars
 
 def isnumeric(s):
     try:
