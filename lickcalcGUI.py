@@ -21,6 +21,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import ntpath#
 import csv
+import collections
 
 # Main class for GUI
 class Window(Frame):
@@ -133,12 +134,11 @@ class Window(Frame):
             if len(checknsessions(self.filename)) > 1:
                 alert('More than one session in file. Analysing session 1.')
             else:                    
-                self.meddata = medfilereader(self.filename)
+                self.loaded_vars = medfilereader_licks(self.filename)
         except:
             alert("Error", "Problem reading file and extracting data. File may not be properly formatted - see Help for advice.")
             return
         self.shortfilename.set(ntpath.basename(self.filename))
-        self.medvars = [x for x in self.meddata if len(x)>1]
               
         try:
             self.updateOptionMenu()
@@ -148,36 +148,31 @@ class Window(Frame):
     def loadcsvfile(self):
 #        try:
         self.filename = filedialog.askopenfilename(initialdir=currdir, title='Select a CSV file.')
-        self.csvvars = {}
+        self.loaded_vars = {}
         with open(self.filename, newline='') as myFile:
             reader = csv.DictReader(myFile)
             cols = reader.fieldnames
             for col in cols:
+                self.loaded_vars[col] = []
                 myFile.seek(0)
-                self.csvvars[col] = []
                 for row in reader:
-                    self.csvvars[col].append(row[col])
+                    try:
+                        self.loaded_vars[col].append(float(row[col]))
+                    except:
+                        pass
         
-#        options = [x+': '+str(y) for (x, y) in zip(list(string.ascii_uppercase), varlens)]
-#        self.onsetButton = OptionMenu(self, self.onset, *options).grid(column=3, row=1, sticky=(W,E))
-#        self.offsetButton = OptionMenu(self, self.offset, *options).grid(column=3, row=2, sticky=(W,E))
-#        self.csvvars[col].append = row[col]
-#        except:
-#             alert("Option not available yet - coming soon!")
-        
-    def showfilename(self):
-        text = Label(self, text=self.filename)
-        text.grid(row=0, column=2)
+        try:
+            self.updateOptionMenu()
+        except TypeError:
+            alert("No valid variables to analyze (e.g. arrays with more than one value")
 
     def updateOptionMenu(self):
-        varlens = [len(x) for x in self.medvars]
-        options = [x+': '+str(y) for (x, y) in zip(list(string.ascii_uppercase), varlens)]
+        options = [x+': '+str(len(self.loaded_vars[x])) for x in self.loaded_vars]
         self.onsetButton = OptionMenu(self, self.onset, *options).grid(column=3, row=1, sticky=(W,E))
         self.offsetButton = OptionMenu(self, self.offset, *options).grid(column=3, row=2, sticky=(W,E))
     
     def analyze(self):
-        print('Analyzing...')
-        
+        print('Analyzing...')       
         # Check inputs
         try:
             burstTH = float(self.IBthreshold.get())
@@ -193,9 +188,10 @@ class Window(Frame):
                
         if hasattr(self, 'filename'):            
             try:
-                self.onsetArray = self.medvars[ord(self.onset.get()[0])-65]
+                self.onsetArray = self.loaded_vars[self.onset.get().split(':')[0]]
+                print(self.onsetArray)
                 try:
-                    self.offsetArray = self.medvars[ord(self.offset.get()[0])-65]
+                    self.offsetArray = self.loaded_vars[self.offset.get().split(':')[0]]
                     self.lickdata = lickCalc(self.onsetArray, offset=self.offsetArray, burstThreshold = burstTH, runThreshold = runTH)
                 except:
                     self.lickdata = lickCalc(self.onsetArray, burstThreshold = burstTH, runThreshold = runTH)
@@ -285,14 +281,10 @@ def checknsessions(filename):
     matches = [i for i,x in enumerate(datarows) if x == 0.3]
     return matches
 
-def medfilereader(filename, varsToExtract = 'all',
+def medfilereader_licks(filename,
                   sessionToExtract = 1,
                   verbose = False,
-                  remove_var_header = False):
-    if varsToExtract == 'all':
-        numVarsToExtract = np.arange(0,26)
-    else:
-        numVarsToExtract = [ord(x)-97 for x in varsToExtract]
+                  remove_var_header = True):
     
     f = open(filename, 'r')
     f.seek(0)
@@ -305,24 +297,21 @@ def medfilereader(filename, varsToExtract = 'all',
         print('There are ' + str(len(matches)) + ' sessions in ' + filename)
         print('Analyzing session ' + str(sessionToExtract))
     
-    varstart = matches[sessionToExtract - 1]
-    medvars = [[] for n in range(26)]
-    
+    varstart = matches[sessionToExtract - 1]    
+    medvars = {}
+   
     k = int(varstart + 27)
     for i in range(26):
         medvarsN = int(datarows[varstart + i + 1])
-        
-        medvars[i] = datarows[k:k + int(medvarsN)]
+        if medvarsN > 1:
+            medvars[string.ascii_uppercase[i]] = datarows[k:k + int(medvarsN)]
         k = k + medvarsN
-        
+    
     if remove_var_header == True:
-        varsToReturn = [medvars[i][1:] for i in numVarsToExtract]
-    else:
-        varsToReturn = [medvars[i] for i in numVarsToExtract]
+        for val in medvars.values():
+            val.pop(0)
 
-    if np.shape(varsToReturn)[0] == 1:
-        varsToReturn = varsToReturn[0]
-    return varsToReturn
+    return medvars
 
 def isnumeric(s):
     try:

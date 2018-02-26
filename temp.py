@@ -4,19 +4,18 @@ Created on Sat Feb 24 16:32:58 2018
 
 @author: jaimeHP
 """
-import csv
+import collections
+import numpy as np
+import string
+
+str1 = 'A: 5353'
+str2 = 'onset: 663'
+
+print(str1.split(':')[0])
 
 
-fff = 'hey ho'
-ttt = str(203)
-bbb = 543
 
-d = [('Filename', fff),('Total licks', ttt),
-     ('Burst number', bbb)]
-
-
-with open('C:\\Users\\jaimeHP\\Dropbox\\Python\\cas9\\cas9_medfiles\\testfile.csv', 'w', newline='') as file:
-    csv_out = csv.writer(file)
-    csv_out.writerow(['Parameter', 'Value'])
-    for row in d:
-        csv_out.writerow(row)
+#str = "<>I'm Tom."
+#temp = str.split("I",1)
+#temp[0]=temp[0].replace("<>","")
+#str = "I".join(temp)
