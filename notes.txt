@@ -16,3 +16,7 @@ maybe best option is --onefile but NOT --windowed so that at least the console w
 
 --icon='iconfile.ico'
 
+***
+Use this line to make .exe, file will be in dist folder
+
+pyinstaller --onefile --icon=lickcalc-Icon.ico lickcalcGUI.py
