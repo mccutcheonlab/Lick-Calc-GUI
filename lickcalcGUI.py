@@ -61,7 +61,7 @@ class Window(Frame):
         self.nolongILIslbl = ttk.Label(self, text='Ignore Long ILIs')
         
         self.outputlbl = ttk.Label(self, text='Outputs')
-        self.aboutlbl = ttk.Label(self, text='LickCalc-1.0 by J McCutcheon')
+        self.aboutlbl = ttk.Label(self, text='LickCalc-1.1 by J McCutcheon')
   
         #Set up Entry variables
         self.shortfilename = StringVar(self.master)
@@ -287,7 +287,8 @@ class Window(Frame):
                  ('Total licks',self.lickdata['total']),
                  ('Frequency',self.lickdata['freq']),
                  ('Number of bursts',self.lickdata['bNum']),
-                 ('Licks per burst',self.lickdata['bMean'])]
+                 ('Licks per burst',self.lickdata['bMean']),
+                 ('Licks per burst (first 3)',self.lickdata['bMean-first3'])]
             
             with open(savefile, 'w', newline='') as file:
                 csv_out = csv.writer(file)
@@ -298,6 +299,16 @@ class Window(Frame):
         except:
             alert('Problem making text summary!')
             print("Error:", sys.exc_info()[0])
+            
+    def licksperburstsummary(self):
+        self.folder = get_location()
+        savefile = self.folder + '//' + self.shortfilename.get() + '-licks-per-burst.csv'
+        try:
+            d = self.data['bLicks']
+        except:
+            alert('Problem making text summary!')
+            print("Error:", sys.exc_info()[0])
+        
 
 def get_location():
     loc = filedialog.askdirectory(initialdir=currdir, title='Select a save folder.')
@@ -405,8 +416,10 @@ def lickCalc(licks, offset = [], burstThreshold = 0.25, runThreshold = 10,
     lickData['bNum'] = len(lickData['bStart'])
     if lickData['bNum'] > 0:
         lickData['bMean'] = np.nanmean(lickData['bLicks'])
+        lickData['bMean-first3'] = np.nanmean(lickData['bLicks'][:3])
     else:
         lickData['bMean'] = 0
+        lickData['bMean-first3'] = 0
     
     lickData['bILIs'] = [x for x in lickData['ilis'] if x > burstThreshold]
 
@@ -459,8 +472,12 @@ def iliFig(ax, data, contents = '', color='grey', onlyshilis=False):
     
 def burstlengthFig(ax, data, contents='', color3rdbar=False):
     
-    figlabel = (str(data['bNum']) + ' total bursts\n' +
-                str('%.2f' % data['bMean']) + ' licks/burst.')
+#    figlabel = (str(data['bNum']) + ' total bursts\n' +
+#                str('%.2f' % data['bMean']) + ' licks/burst\n +
+#                str('[%.2f' % data['bMean-first3'] + ' licks/burst.]'))
+    
+    figlabel = '{:d} total bursts\n{:.2f} licks/burst\n{:.2f} licks/burst.'.format(
+            data['bNum'], data['bMean'], data['bMean-first3'])
                                                 
     n, bins, patches = ax.hist(data['bLicks'], range(0, 20), normed=1)
     ax.set_xticks(range(1,20))
