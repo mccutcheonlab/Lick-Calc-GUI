@@ -4,7 +4,7 @@ block_cipher = None
 
 
 a = Analysis(['lickcalcGUI.py'],
-             pathex=['C:\\Users\\jaimeHP\\Documents\\GitHub\\Lick-Calc-GUI'],
+             pathex=['C:\\Users\\James Rig\\Documents\\GitHub\\Lick-Calc-GUI'],
              binaries=[],
              datas=[],
              hiddenimports=[],
@@ -26,4 +26,4 @@ exe = EXE(pyz,
           strip=False,
           upx=True,
           runtime_tmpdir=None,
-          console=False , icon='lickcalc-Icon.ico')
+          console=True , icon='lickcalc-Icon.ico')
