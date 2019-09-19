@@ -259,10 +259,12 @@ class Window(Frame):
                 try:
                     self.offsetArray = self.loaded_vars[self.offset.get().split(':')[0]]
                     self.lickdata = lickCalc(self.onsetArray, offset=self.offsetArray, burstThreshold = burstTH, runThreshold = runTH,
-                                             ignorelongilis=self.nolongILIs.get())
+                                             ignorelongilis=self.nolongILIs.get(),
+                                             minburstlength=int(self.minburst.get()))
                 except:
                     self.lickdata = lickCalc(self.onsetArray, burstThreshold = burstTH, runThreshold = runTH,
-                                             ignorelongilis=self.nolongILIs.get())
+                                             ignorelongilis=self.nolongILIs.get(),
+                                             minburstlength=int(self.minburst.get()))
 
             except:
                 alert('Have you picked an onset array yet?')
@@ -460,7 +462,7 @@ This function will calculate data for bursts from a train of licks. The threshol
 for bursts and clusters can be set. It returns all data as a dictionary.
 """
 def lickCalc(licks, offset = [], burstThreshold = 0.25, runThreshold = 10,
-             ignorelongilis=True,
+             ignorelongilis=True, minburstlength=1,
              binsize=60, histDensity = False):
     # makes dictionary of data relating to licks and bursts
     if type(licks) != np.ndarray or type(offset) != np.ndarray:
@@ -494,7 +496,15 @@ def lickCalc(licks, offset = [], burstThreshold = 0.25, runThreshold = 10,
     lickData['bEnd'] = [lickData['licks'][i-1] for i in lickData['bInd'][1:]]
     lickData['bEnd'].append(lickData['licks'][-1])
 
-    lickData['bLicks'] = np.diff(lickData['bInd'] + [len(lickData['licks'])])    
+    lickData['bLicks'] = np.diff(lickData['bInd'] + [len(lickData['licks'])])
+    
+    # calculates which bursts are above the minimum threshold
+    inds = [i for i, val in enumerate(lickData['bLicks']) if val>minburstlength-1]
+    
+    lickData['bLicks'] = removeshortbursts(lickData['bLicks'], inds)
+    lickData['bStart'] = removeshortbursts(lickData['bStart'], inds)
+    lickData['bEnd'] = removeshortbursts(lickData['bEnd'], inds)
+      
     lickData['bTime'] = np.subtract(lickData['bEnd'], lickData['bStart'])
     lickData['bNum'] = len(lickData['bStart'])
     if lickData['bNum'] > 0:
@@ -525,6 +535,10 @@ def lickCalc(licks, offset = [], burstThreshold = 0.25, runThreshold = 10,
         print('Problem making histograms of lick data')
         
     return lickData
+
+def removeshortbursts(data, inds):
+    data = [data[i] for i in inds]
+    return data
 
 def licklengthFig(ax, data, contents = '', color='grey'):          
     if len(data['longlicks']) > 0:
