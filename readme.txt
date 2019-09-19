@@ -6,4 +6,4 @@ Used 2019.03 Anaconda
 
 created environment with:
 
-conda create -n lickcalcgui python=3.4 spyder numpy matplotlib
+conda create -n lickcalcgui python=3.4 spyder numpy matplotlib xlsxwriter

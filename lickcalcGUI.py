@@ -22,6 +22,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 import ntpath#
 import csv
 import collections
+import xlsxwriter as xl
 
 # Main class for GUI
 class Window(Frame):
@@ -60,7 +61,7 @@ class Window(Frame):
         
         self.nolongILIslbl = ttk.Label(self, text='Ignore Long ILIs')
         
-        self.outputlbl = ttk.Label(self, text='Outputs', style='header.TLabel')
+        self.outputlbl = ttk.Label(self, text='Output Parameters', style='header.TLabel')
         self.suffixlbl = ttk.Label(self, text='File suffix')
         self.aboutlbl = ttk.Label(self, text='LickCalc-1.2 by J McCutcheon')
   
@@ -221,7 +222,8 @@ class Window(Frame):
             alert('Problem loading next file. It might be at the end of the folder or in the wrong format.')
     
     def analyze(self):
-        print('Analyzing...')       
+        print('Analyzing...')
+        
         # Check inputs
         try:
             burstTH = float(self.IBthreshold.get())
@@ -234,7 +236,7 @@ class Window(Frame):
         except ValueError:
             alert('Interrun threshold value needs to be numeric')
             return        
-               
+
         if hasattr(self, 'filename'):            
             try:
                 self.onsetArray = self.loaded_vars[self.onset.get().split(':')[0]]
@@ -252,7 +254,7 @@ class Window(Frame):
         else:
             print('Select a file first')
             messagebox.showinfo("Error", "Select a valid file first.")
-        
+               
         self.makegraphs()
                         
     def makegraphs(self):
@@ -267,12 +269,12 @@ class Window(Frame):
 
         # Licks over session 
         sessionlicksFig(ax1, self.onsetArray)
-       
+        
         # Lick parameter figures
         iliFig(ax2, self.lickdata, onlyshilis=self.nolongILIs.get()) 
         burstlengthFig(ax3, self.lickdata)        
         licklengthFig(ax4, self.lickdata)
-      
+        
         canvas = FigureCanvasTkAgg(f, self)
         canvas.show()
         canvas.get_tk_widget().grid(row=5, column=0, columnspan=7, sticky=(N,S,E,W))
@@ -299,25 +301,54 @@ class Window(Frame):
     def makeExcel(self):
         if not hasattr(self, 'savefolder'):
             self.setsavefolder()
-        alert('Working on making an Excel file')
+            
+        savefile = self.savefolder + '//' + self.shortfilename.get() + self.suffix.get() + '.xlsx'
+        
+#        try:
+        self.makesummarydictionary()
+        
+        wb = xl.Workbook(savefile)
+        # worksheet with summary data
+        sh = wb.add_worksheet('Summary')
+        
+        bold = wb.add_format({'bold': True})
+        
+        sh.set_column(0, 1, 20)
+        sh.write('A1', 'Parameter', bold)
+        sh.write('B1', 'Value', bold)
+        for idx, vals in enumerate(self.d):
+            sh.write(idx+1, 0, vals[0])
+            sh.write(idx+1, 1, vals[1])
+        
+        # worksheet with lick timestamps
+        sh = wb.add_worksheet('Licks')
+        for idx, val in enumerate(self.onsetArray):
+            sh.write(idx, 0, val)
+        
+        sh = wb.add_worksheet('ILIs')
+        for idx, val in enumerate(self.lickdata['ilis']):
+            sh.write(idx, 0, val)
+
+        sh = wb.add_worksheet('Bursts')
+        for idx, val in enumerate(self.lickdata['bLicks']):
+            sh.write(idx, 0, val)
+            
+        wb.close()
+#        except:
+#            alert('Working on making an Excel file')
         
     def maketextsummary(self):
         if not hasattr(self, 'savefolder'):
             self.setsavefolder()
             
-        savefile = self.folder + '//' + self.shortfilename.get() + self.suffix.get() + '-text_summary.csv'
+        savefile = self.savefolder + '//' + self.shortfilename.get() + self.suffix.get() + '-text_summary.csv'
         try:
-            d = [('Filename',self.shortfilename.get()),
-                 ('Total licks',self.lickdata['total']),
-                 ('Frequency',self.lickdata['freq']),
-                 ('Number of bursts',self.lickdata['bNum']),
-                 ('Licks per burst',self.lickdata['bMean']),
-                 ('Licks per burst (first 3)',self.lickdata['bMean-first3'])]
+            self.makesummarydictionary()
             
             with open(savefile, 'w', newline='') as file:
                 csv_out = csv.writer(file)
                 csv_out.writerow(['Parameter', 'Value'])
-                for row in d:
+                for row in self.d:
                     csv_out.writerow(row)
         except:
             alert('Problem making text summary!')
@@ -332,6 +363,14 @@ class Window(Frame):
             alert('Problem making text summary!')
             print("Error:", sys.exc_info()[0])
         
+    def makesummarydictionary(self):
+        self.d = [('Filename',self.shortfilename.get()),
+                 ('Total licks',self.lickdata['total']),
+                 ('Frequency',self.lickdata['freq']),
+                 ('Number of bursts',self.lickdata['bNum']),
+                 ('Licks per burst',self.lickdata['bMean']),
+                 ('Licks per burst (first 3)',self.lickdata['bMean-first3']),
+                 ('Number of long licks',len(self.lickdata['longlicks']))]
 
 def get_location():
     loc = filedialog.askdirectory(initialdir=currdir, title='Select a save folder.')
@@ -521,7 +560,7 @@ def ibiFig(ax, data, contents = ''):
 root = Tk()
 
 currdir = os.getcwd()
-#currdir = 'C:\\Users\\jaimeHP\\Dropbox\\Python\\cas9\\cas9_medfiles\\'
+currdir = 'C:\\Github\\Lick-Calc-GUI\\output\\'
 
 app = Window(root)
 root.lift()
