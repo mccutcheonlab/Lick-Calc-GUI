@@ -60,6 +60,8 @@ class Window(Frame):
         self.IRthresholdlbl = ttk.Label(self, text='Interrun threshold')
         
         self.nolongILIslbl = ttk.Label(self, text='Ignore Long ILIs')
+        self.minburstlengthlbl = ttk.Label(self, text='Minimum burst')
+        self.plotburstproblbl = ttk.Label(self, text='Plot burst prob.')
         
         self.outputlbl = ttk.Label(self, text='Output Parameters', style='header.TLabel')
         self.suffixlbl = ttk.Label(self, text='File suffix')
@@ -72,12 +74,16 @@ class Window(Frame):
         
         self.IBthreshold = StringVar(self.master)
         self.IRthreshold = StringVar(self.master)
+        self.minburst = StringVar(self.master)
 
         self.IBthresholdField = ttk.Entry(self, textvariable=self.IBthreshold)
         self.IBthresholdField.insert(END,'0.5')
         
         self.IRthresholdField = ttk.Entry(self, textvariable=self.IRthreshold)
         self.IRthresholdField.insert(END,'10')
+        
+        self.minburstField = ttk.Entry(self, textvariable=self.minburst)
+        self.minburstField.insert(END, '1')
         
         self.suffix = StringVar(self.master)
         self.suffixField = ttk.Entry(self, textvariable=self.suffix)
@@ -94,6 +100,10 @@ class Window(Frame):
         self.nolongILIs = BooleanVar(self.master)
         self.nolongILIs.set(False)
         self.nolongILIsButton = ttk.Checkbutton(self, variable=self.nolongILIs, onvalue=True)
+        
+        self.plotburstprob = BooleanVar(self.master)
+        self.plotburstprob.set(False)
+        self.plotburstprobButton = ttk.Checkbutton(self, variable=self.plotburstprob, onvalue=True)
         
         # Set up Buttons
         self.loadmedButton = ttk.Button(self, text='Load Med File', command=self.openmedfile)
@@ -130,6 +140,12 @@ class Window(Frame):
         
         self.nolongILIslbl.grid(column=4, row=1)
         self.nolongILIsButton.grid(column=5, row=1)
+        
+        self.minburstlengthlbl.grid(column=4, row=2)
+        self.minburstField.grid(column=5, row=2)
+        
+        self.plotburstproblbl.grid(column=4, row=3)
+        self.plotburstprobButton.grid(column=5, row=3)
         
         self.outputlbl.grid(column=0, row=6, sticky=(W,E), pady=5)
         self.suffixlbl.grid(column=1, row=6, sticky=(E), pady=5)
@@ -242,9 +258,11 @@ class Window(Frame):
                 self.onsetArray = self.loaded_vars[self.onset.get().split(':')[0]]
                 try:
                     self.offsetArray = self.loaded_vars[self.offset.get().split(':')[0]]
-                    self.lickdata = lickCalc(self.onsetArray, offset=self.offsetArray, burstThreshold = burstTH, runThreshold = runTH)
+                    self.lickdata = lickCalc(self.onsetArray, offset=self.offsetArray, burstThreshold = burstTH, runThreshold = runTH,
+                                             ignorelongilis=self.nolongILIs.get())
                 except:
-                    self.lickdata = lickCalc(self.onsetArray, burstThreshold = burstTH, runThreshold = runTH)
+                    self.lickdata = lickCalc(self.onsetArray, burstThreshold = burstTH, runThreshold = runTH,
+                                             ignorelongilis=self.nolongILIs.get())
 
             except:
                 alert('Have you picked an onset array yet?')
@@ -271,7 +289,7 @@ class Window(Frame):
         sessionlicksFig(ax1, self.onsetArray)
         
         # Lick parameter figures
-        iliFig(ax2, self.lickdata, onlyshilis=self.nolongILIs.get()) 
+        iliFig(ax2, self.lickdata) 
         burstlengthFig(ax3, self.lickdata)        
         licklengthFig(ax4, self.lickdata)
         
@@ -441,7 +459,8 @@ def isnumeric(s):
 This function will calculate data for bursts from a train of licks. The threshold
 for bursts and clusters can be set. It returns all data as a dictionary.
 """
-def lickCalc(licks, offset = [], burstThreshold = 0.25, runThreshold = 10, 
+def lickCalc(licks, offset = [], burstThreshold = 0.25, runThreshold = 10,
+             ignorelongilis=True,
              binsize=60, histDensity = False):
     # makes dictionary of data relating to licks and bursts
     if type(licks) != np.ndarray or type(offset) != np.ndarray:
@@ -463,7 +482,9 @@ def lickCalc(licks, offset = [], burstThreshold = 0.25, runThreshold = 10,
 
     lickData['licks'] = np.concatenate([[0], licks])
     lickData['ilis'] = np.diff(lickData['licks'])
-    lickData['shilis'] = [x for x in lickData['ilis'] if x < burstThreshold]
+    if ignorelongilis:
+        lickData['ilis'] = [x for x in lickData['ilis'] if x < burstThreshold]
+
     lickData['freq'] = 1/np.mean([x for x in lickData['ilis'] if x < burstThreshold])
     lickData['total'] = len(licks)
     
@@ -519,12 +540,8 @@ def licklengthFig(ax, data, contents = '', color='grey'):
     ax.set_ylabel('Frequency')
     ax.set_title(contents)
     
-def iliFig(ax, data, contents = '', color='grey', onlyshilis=False):
-    if onlyshilis == True:
-        ax.hist(data['shilis'], np.arange(0, 0.5, 0.02), color=color)        
-    else:
-        ax.hist(data['ilis'], np.arange(0, 0.5, 0.02), color=color)
-    
+def iliFig(ax, data, contents = '', color='grey'):
+    ax.hist(data['ilis'], np.arange(0, 0.5, 0.02), color=color)
     figlabel = '%.2f Hz' % data['freq']
     ax.text(0.9, 0.9, figlabel, ha='right', va='top', transform = ax.transAxes)
     
