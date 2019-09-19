@@ -60,7 +60,8 @@ class Window(Frame):
         
         self.nolongILIslbl = ttk.Label(self, text='Ignore Long ILIs')
         
-        self.outputlbl = ttk.Label(self, text='Outputs')
+        self.outputlbl = ttk.Label(self, text='Outputs', style='header.TLabel')
+        self.suffixlbl = ttk.Label(self, text='File suffix')
         self.aboutlbl = ttk.Label(self, text='LickCalc-1.2 by J McCutcheon')
   
         #Set up Entry variables
@@ -76,6 +77,10 @@ class Window(Frame):
         
         self.IRthresholdField = ttk.Entry(self, textvariable=self.IRthreshold)
         self.IRthresholdField.insert(END,'10')
+        
+        self.suffix = StringVar(self.master)
+        self.suffixField = ttk.Entry(self, textvariable=self.suffix)
+        self.suffixField.insert(END,'')
         
         # Set up Dropdown buttons
         self.OPTIONS = ['None']
@@ -95,8 +100,10 @@ class Window(Frame):
         self.analyzeButton = ttk.Button(self, text='Analyze Data', command=self.analyze)
         self.prevButton = ttk.Button(self, text='Previous', command=lambda: self.load_adj_files(delta=-1))
         self.nextButton = ttk.Button(self, text='Next', command=lambda: self.load_adj_files(delta=1))
-                
+        
+        self.defaultfolderButton = ttk.Button(self, text='Default Folder', command=self.setsavefolder)
         self.pdfButton = ttk.Button(self, text='PDF', command=self.makePDF)
+        self.excelButton = ttk.Button(self, text='Excel', command=self.makeExcel)
         self.textsummaryButton = ttk.Button(self, text='Text Summary', command=self.maketextsummary)
         
         #Place items in grid
@@ -124,8 +131,13 @@ class Window(Frame):
         self.nolongILIsButton.grid(column=5, row=1)
         
         self.outputlbl.grid(column=0, row=6, sticky=(W,E), pady=5)
-        self.pdfButton.grid(column=1, row=6, sticky=(W,E), pady=5)
-        self.textsummaryButton.grid(column=2, row=6, sticky=(W,E), pady=5)
+        self.suffixlbl.grid(column=1, row=6, sticky=(E), pady=5)
+        self.suffixField.grid(column=2, row=6, sticky=(W,E), pady=5)
+        
+        self.defaultfolderButton.grid(column=3, row=6, sticky=(W,E), pady=5)
+        self.pdfButton.grid(column=4, row=6, sticky=(W,E), pady=5)
+        self.excelButton.grid(column=5, row=6, sticky=(W,E), pady=5)
+        self.textsummaryButton.grid(column=6, row=6, sticky=(W,E), pady=5)
         
         self.aboutlbl.grid(column=0, row=7, columnspan=7, sticky=W)
         
@@ -267,9 +279,12 @@ class Window(Frame):
       
         return f
     
+    def setsavefolder(self):
+        self.savefolder = get_location()
+    
     def makePDF(self):
         self.folder = get_location()
-        savefile = self.folder + '//' + self.shortfilename.get() + '.pdf'
+        savefile = self.folder + '//' + self.shortfilename.get() + self.suffix.get() + '.pdf'
         try:
             pdfFig = self.makegraphs()
             pdf_pages = PdfPages(savefile)
@@ -277,11 +292,14 @@ class Window(Frame):
             pdf_pages.close()
         except:
             print("Error:", sys.exc_info()[0])
-            alert('Problem making PDF!')
+            alert('Problem making PDF! Is data loaded and analyzed?')
+    
+    def makeExcel(self):
+        alert('Making Excel!')
         
     def maketextsummary(self):
         self.folder = get_location()
-        savefile = self.folder + '//' + self.shortfilename.get() + '-text_summary.csv'
+        savefile = self.folder + '//' + self.shortfilename.get() + self.suffix.get() + '-text_summary.csv'
         try:
             d = [('Filename',self.shortfilename.get()),
                  ('Total licks',self.lickdata['total']),
@@ -498,7 +516,7 @@ def ibiFig(ax, data, contents = ''):
 root = Tk()
 
 currdir = os.getcwd()
-currdir = 'C:\\Users\\jaimeHP\\Dropbox\\Python\\cas9\\cas9_medfiles\\'
+#currdir = 'C:\\Users\\jaimeHP\\Dropbox\\Python\\cas9\\cas9_medfiles\\'
 
 app = Window(root)
 root.lift()
