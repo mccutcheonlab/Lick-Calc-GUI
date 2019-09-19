@@ -2,7 +2,7 @@
 """
 Created by J McCutcheon
 22 Feb 2018
-To analyze data from Med PC files and calculate/output lick parameters.
+To analyze data from Med PC files or text/csv files and calculate/output lick parameters.
 """
 
 # Import statements
@@ -15,8 +15,7 @@ import string
 import numpy as np
 import matplotlib as mpl
 mpl.use("TkAgg")
-#from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
@@ -62,7 +61,7 @@ class Window(Frame):
         self.nolongILIslbl = ttk.Label(self, text='Ignore Long ILIs')
         
         self.outputlbl = ttk.Label(self, text='Outputs')
-        self.aboutlbl = ttk.Label(self, text='LickCalc-1.1 by J McCutcheon')
+        self.aboutlbl = ttk.Label(self, text='LickCalc-1.2 by J McCutcheon')
   
         #Set up Entry variables
         self.shortfilename = StringVar(self.master)
@@ -92,7 +91,7 @@ class Window(Frame):
         
         # Set up Buttons
         self.loadmedButton = ttk.Button(self, text='Load Med File', command=self.openmedfile)
-        self.loadcsvButton = ttk.Button(self, text='Load CSV File', command=self.opencsvfile)
+        self.loadcsvButton = ttk.Button(self, text='Load CSV/txt File', command=self.opencsvfile)
         self.analyzeButton = ttk.Button(self, text='Analyze Data', command=self.analyze)
         self.prevButton = ttk.Button(self, text='Previous', command=lambda: self.load_adj_files(delta=-1))
         self.nextButton = ttk.Button(self, text='Next', command=lambda: self.load_adj_files(delta=1))
