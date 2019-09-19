@@ -283,8 +283,10 @@ class Window(Frame):
         self.savefolder = get_location()
     
     def makePDF(self):
-        self.folder = get_location()
-        savefile = self.folder + '//' + self.shortfilename.get() + self.suffix.get() + '.pdf'
+        if not hasattr(self, 'savefolder'):
+            self.setsavefolder()
+            
+        savefile = self.savefolder + '//' + self.shortfilename.get() + self.suffix.get() + '.pdf'
         try:
             pdfFig = self.makegraphs()
             pdf_pages = PdfPages(savefile)
@@ -295,10 +297,14 @@ class Window(Frame):
             alert('Problem making PDF! Is data loaded and analyzed?')
     
     def makeExcel(self):
-        alert('Making Excel!')
+        if not hasattr(self, 'savefolder'):
+            self.setsavefolder()
+        alert('Working on making an Excel file')
         
     def maketextsummary(self):
-        self.folder = get_location()
+        if not hasattr(self, 'savefolder'):
+            self.setsavefolder()
+            
         savefile = self.folder + '//' + self.shortfilename.get() + self.suffix.get() + '-text_summary.csv'
         try:
             d = [('Filename',self.shortfilename.get()),
@@ -313,7 +319,6 @@ class Window(Frame):
                 csv_out.writerow(['Parameter', 'Value'])
                 for row in d:
                     csv_out.writerow(row)
-
         except:
             alert('Problem making text summary!')
             print("Error:", sys.exc_info()[0])
