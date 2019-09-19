@@ -293,8 +293,13 @@ class Window(Frame):
         sessionlicksFig(ax1, self.onsetArray)
         
         # Lick parameter figures
-        iliFig(ax2, self.lickdata) 
-        burstlengthFig(ax3, self.lickdata)        
+        iliFig(ax2, self.lickdata)
+        
+        if self.plotburstprob.get() == False:
+            burstlengthFig(ax3, self.lickdata)
+        else:
+            burstprobFig(ax3, self.lickdata)
+            
         licklengthFig(ax4, self.lickdata)
         
         canvas = FigureCanvasTkAgg(f, self)

@@ -178,25 +178,34 @@ def iliFig(ax, data, contents = '', color='grey'):
     
 def burstlengthFig(ax, data, contents='', color3rdbar=False):
     
-#    figlabel = (str(data['bNum']) + ' total bursts\n' +
-#                str('%.2f' % data['bMean']) + ' licks/burst\n +
-#                str('[%.2f' % data['bMean-first3'] + ' licks/burst.]'))
-    
-    figlabel = '{:d} total bursts\n{:.2f} licks/burst\n{:.2f} licks/burst.'.format(
-            data['bNum'], data['bMean'], data['bMean-first3'])
+    figlabel = '{:d} total bursts\n{:.2f} licks/burst'.format(
+            data['bNum'], data['bMean'])
                                                 
     n, bins, patches = ax.hist(data['bLicks'], range(0, 20), normed=1)
     ax.set_xticks(range(1,20))
     ax.set_xlabel('Licks per burst')
     ax.set_ylabel('Frequency')
     ax.set_xticks([1,2,3,4,5,10,15])
-#        ax.text(0.9, 0.9, figlabel1, ha='right', va='center', transform = ax.transAxes)
     ax.text(0.9, 0.8, figlabel, ha='right', va='center', transform = ax.transAxes)
     
-    if color3rdbar == True:
-        patches[3].set_fc('r')
+def burstprobFig(ax, data):
     
-def ibiFig(ax, data, contents = ''):
-    ax.hist(data['bILIs'], range(0, 20), normed=1)
-    ax.set_xlabel('Interburst intervals')
-    ax.set_ylabel('Frequency')
+    figlabel = '{:d} total bursts\n{:.2f} licks/burst'.format(
+            data['bNum'], data['bMean'])
+    
+    x, y = calculate_burst_prob(data['bLicks'])
+    ax.scatter(x,y,color='none', edgecolors='grey')
+
+    ax.set_xlabel('Burst size (n)')
+    ax.set_ylabel('Probability of burst>n')
+    ax.text(0.9, 0.8, figlabel, ha='right', va='center', transform = ax.transAxes)
+
+def calculate_burst_prob(bursts):
+    bins = np.arange(min(bursts), max(bursts))
+    hist=np.histogram(bursts, bins=bins, density=True)
+    cumsum=np.cumsum(hist[0])
+
+    x = hist[1][1:]
+    y = [1-val for val in cumsum]
+    
+    return x, y
