@@ -1,6 +1,6 @@
 To make into executable
 
-install pyinstaller (pip install pyinstaller)
+install pyinstaller (pip install pyinstaller) )installed into lickcalc environment
 navigate to appropriate directory and run
 pyinstaller lickcalcGUI.py
 
