@@ -281,9 +281,9 @@ class Window(Frame):
                         
     def makegraphs(self):
         
-        f = plt.figure(figsize=(8.27, 5))
-        plt.suptitle(self.shortfilename.get())
-        grid = plt.GridSpec(2, 3, wspace=0.5, hspace=0.5)
+        f = Figure(figsize=(8.27, 5))
+        f.suptitle(self.shortfilename.get())
+        grid = mpl.gridspec.GridSpec(2, 3, wspace=0.5, hspace=0.5)
         ax1 = f.add_subplot(grid[0,:])
         ax2 = f.add_subplot(grid[1,0])
         ax3 = f.add_subplot(grid[1,1])
