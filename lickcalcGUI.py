@@ -572,7 +572,7 @@ def burstlengthFig(ax, data, contents='', color3rdbar=False):
     figlabel = '{:d} total bursts\n{:.2f} licks/burst'.format(
             data['bNum'], data['bMean'])
                                                 
-    n, bins, patches = ax.hist(data['bLicks'], range(0, 20), normed=1)
+    n, bins, patches = ax.hist(data['bLicks'], range(0, 20), density=True)
     ax.set_xticks(range(1,20))
     ax.set_xlabel('Licks per burst')
     ax.set_ylabel('Frequency')
