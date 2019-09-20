@@ -17,14 +17,10 @@ import matplotlib as mpl
 mpl.use("TkAgg")
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
-import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
-import ntpath#
+import ntpath
 import csv
-import collections
 import xlsxwriter as xl
-
-import lickcalc_fx
 
 # Main class for GUI
 class Window(Frame):
@@ -67,7 +63,7 @@ class Window(Frame):
         
         self.outputlbl = ttk.Label(self, text='Output Parameters', style='header.TLabel')
         self.suffixlbl = ttk.Label(self, text='File suffix')
-        self.aboutlbl = ttk.Label(self, text='LickCalc-1.2 by J McCutcheon')
+        self.aboutlbl = ttk.Label(self, text='LickCalc-1.3 by J McCutcheon')
   
         #Set up Entry variables
         self.shortfilename = StringVar(self.master)
