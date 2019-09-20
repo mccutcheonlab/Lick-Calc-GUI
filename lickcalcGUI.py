@@ -15,7 +15,7 @@ import string
 import numpy as np
 import matplotlib as mpl
 mpl.use("TkAgg")
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
@@ -303,7 +303,7 @@ class Window(Frame):
         licklengthFig(ax4, self.lickdata)
         
         canvas = FigureCanvasTkAgg(f, self)
-        canvas.show()
+        #canvas.show()
         canvas.get_tk_widget().grid(row=5, column=0, columnspan=7, sticky=(N,S,E,W))
       
         return f
