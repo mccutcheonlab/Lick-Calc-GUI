@@ -124,3 +124,5 @@ dmypy.json
 
 data/*
 output/*
+docs/fig1.png
+docs/fig1.ai
