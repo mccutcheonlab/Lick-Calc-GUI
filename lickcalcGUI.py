@@ -13,6 +13,8 @@ from tkinter import messagebox
 import os
 import string
 import numpy as np
+import scipy.optimize as opt
+import scipy.stats as stats
 import matplotlib as mpl
 mpl.use("TkAgg")
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -294,7 +296,7 @@ class Window(Frame):
         if self.plotburstprob.get() == False:
             burstlengthFig(ax3, self.lickdata)
         else:
-            burstprobFig(ax3, self.lickdata)
+            self.weibull_fit = burstprobFig(ax3, self.lickdata)
             
         licklengthFig(ax4, self.lickdata)
         
@@ -394,6 +396,12 @@ class Window(Frame):
                  ('Licks per burst',self.lickdata['bMean']),
                  ('Licks per burst (first 3)',self.lickdata['bMean-first3']),
                  ('Number of long licks',len(self.lickdata['longlicks']))]
+        print(type(self.d))
+        try:
+            self.d['Weibull: alpha'] = self.weibull_fit['alpha']
+        except: pass
+                
+            
 
 
 def get_location():
@@ -581,15 +589,23 @@ def burstlengthFig(ax, data, contents='', color3rdbar=False):
     
 def burstprobFig(ax, data):
     
-    figlabel = '{:d} total bursts\n{:.2f} licks/burst'.format(
-            data['bNum'], data['bMean'])
+#    figlabel = '{:d} total bursts\n{:.2f} licks/burst'.format(
+#            data['bNum'], data['bMean'])
     
     x, y = calculate_burst_prob(data['bLicks'])
     ax.scatter(x,y,color='none', edgecolors='grey')
+    
+    alpha, beta, r_squared = fit_weibull(x, y)
+    ax.plot(x, weib_davis(x, alpha, beta), c='orange')
+          
+    figlabel = 'Fitted values:\nalpha={:.2f}\nbeta={:.2f}\nrsq={:.2f}'.format(
+            alpha, beta, r_squared)
 
     ax.set_xlabel('Burst size (n)')
     ax.set_ylabel('Probability of burst>n')
     ax.text(0.9, 0.8, figlabel, ha='right', va='center', transform = ax.transAxes)
+    
+    return {'alpha': alpha, 'beta': beta, 'rsq': r_squared}
 
 def calculate_burst_prob(bursts):
     bins = np.arange(min(bursts), max(bursts))
@@ -600,6 +616,19 @@ def calculate_burst_prob(bursts):
     y = [1-val for val in cumsum]
     
     return x, y
+
+def weib_davis(x, alpha, beta): 
+    return (np.exp(-(alpha*x)**beta))
+
+def fit_weibull(xdata, ydata):
+    x0=np.array([0.1, 1])
+    fit=opt.curve_fit(weib_davis, xdata, ydata, x0)
+    alpha=fit[0][0]
+    beta=fit[0][1]
+    slope, intercept, r_value, p_value, std_err = stats.linregress(ydata, weib_davis(xdata, alpha, beta))
+    r_squared=r_value**2
+    
+    return alpha, beta, r_squared
 
 root = Tk()
 
