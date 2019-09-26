@@ -399,13 +399,6 @@ class Window(Frame):
                  ('Weibull: alpha',self.lickdata['weib_alpha']),
                  ('Weibull: beta',self.lickdata['weib_beta']),
                  ('Weibull: rsquared',self.lickdata['weib_rsq'])]
-#        print(type(self.d))
-#        try:
-#            self.d.append(['Weibull: alpha'] = self.weibull_fit['alpha']
-#        except: pass
-                
-            
-
 
 def get_location():
     loc = filedialog.askdirectory(initialdir=currdir, title='Select a save folder.')
