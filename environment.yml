@@ -13,7 +13,7 @@ dependencies:
   - jpeg=9b=hb83a4c4_2
   - kiwisolver=1.1.0=py37ha925a31_0
   - libpng=1.6.37=h2a8f88b_0
-  - matplotlib=3.1.1=py37hc8f65d3_0
+  - matplotlib=3.1.0=py37hc8f65d3_0
   - mkl=2019.4=245
   - mkl-service=2.3.0=py37hb782905_0
   - mkl_fft=1.0.14=py37h14836fe_0
@@ -40,4 +40,5 @@ dependencies:
   - wincertstore=0.2=py37_0
   - xlsxwriter=1.2.1=py_0
   - zlib=1.2.11=h62dcd97_3
-prefix: C:\ProgramData\Anaconda3\envs\lickcalc13b
+prefix: C:\ProgramData\Anaconda3\envs\lickcalc13
+
