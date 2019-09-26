@@ -395,11 +395,14 @@ class Window(Frame):
                  ('Number of bursts',self.lickdata['bNum']),
                  ('Licks per burst',self.lickdata['bMean']),
                  ('Licks per burst (first 3)',self.lickdata['bMean-first3']),
-                 ('Number of long licks',len(self.lickdata['longlicks']))]
-        print(type(self.d))
-        try:
-            self.d['Weibull: alpha'] = self.weibull_fit['alpha']
-        except: pass
+                 ('Number of long licks',len(self.lickdata['longlicks'])),
+                 ('Weibull: alpha',self.lickdata['weib_alpha']),
+                 ('Weibull: beta',self.lickdata['weib_beta']),
+                 ('Weibull: rsquared',self.lickdata['weib_rsq'])]
+#        print(type(self.d))
+#        try:
+#            self.d.append(['Weibull: alpha'] = self.weibull_fit['alpha']
+#        except: pass
                 
             
 
@@ -539,6 +542,13 @@ def lickCalc(licks, offset = [], burstThreshold = 0.25, runThreshold = 10,
     lickData['rNum'] = len(lickData['rStart'])
 
     lickData['rILIs'] = [x for x in lickData['ilis'] if x > runThreshold]
+    
+    xdata, ydata = calculate_burst_prob(lickData['bLicks'])
+    
+    lickData['weib_alpha'], lickData['weib_beta'], lickData['weib_rsq'] = fit_weibull(xdata, ydata)
+    
+    lickData['burstprob']=[xdata, ydata]
+    
     try:
         lickData['hist'] = np.histogram(lickData['licks'][1:], 
                                     range=(0, 3600), bins=int((3600/binsize)),
@@ -551,6 +561,29 @@ def lickCalc(licks, offset = [], burstThreshold = 0.25, runThreshold = 10,
 def removeshortbursts(data, inds):
     data = [data[i] for i in inds]
     return data
+
+def calculate_burst_prob(bursts):
+    bins = np.arange(min(bursts), max(bursts))
+    hist=np.histogram(bursts, bins=bins, density=True)
+    cumsum=np.cumsum(hist[0])
+
+    x = hist[1][1:]
+    y = [1-val for val in cumsum]
+    
+    return x, y
+
+def weib_davis(x, alpha, beta): 
+    return (np.exp(-(alpha*x)**beta))
+
+def fit_weibull(xdata, ydata):
+    x0=np.array([0.1, 1])
+    fit=opt.curve_fit(weib_davis, xdata, ydata, x0)
+    alpha=fit[0][0]
+    beta=fit[0][1]
+    slope, intercept, r_value, p_value, std_err = stats.linregress(ydata, weib_davis(xdata, alpha, beta))
+    r_squared=r_value**2
+    
+    return alpha, beta, r_squared
 
 def licklengthFig(ax, data, contents = '', color='grey'):          
     if len(data['longlicks']) > 0:
@@ -585,50 +618,33 @@ def burstlengthFig(ax, data, contents='', color3rdbar=False):
     ax.set_xlabel('Licks per burst')
     ax.set_ylabel('Frequency')
     ax.set_xticks([1,2,3,4,5,10,15])
-    ax.text(0.9, 0.8, figlabel, ha='right', va='center', transform = ax.transAxes)
+    ax.text(0.9, 0.9, figlabel, ha='right', va='top', transform = ax.transAxes)
     
 def burstprobFig(ax, data):
     
 #    figlabel = '{:d} total bursts\n{:.2f} licks/burst'.format(
 #            data['bNum'], data['bMean'])
-    
-    x, y = calculate_burst_prob(data['bLicks'])
+    x=data['burstprob'][0]
+    y=data['burstprob'][1]
+    alpha=data['weib_alpha']
+    beta=data['weib_beta']
+    rsq=data['weib_rsq']
+#    x, y = calculate_burst_prob(data['bLicks'])
     ax.scatter(x,y,color='none', edgecolors='grey')
     
-    alpha, beta, r_squared = fit_weibull(x, y)
+#    alpha, beta, r_squared = fit_weibull(x, y)
     ax.plot(x, weib_davis(x, alpha, beta), c='orange')
           
     figlabel = 'Fitted values:\nalpha={:.2f}\nbeta={:.2f}\nrsq={:.2f}'.format(
-            alpha, beta, r_squared)
+            alpha, beta, rsq)
 
     ax.set_xlabel('Burst size (n)')
     ax.set_ylabel('Probability of burst>n')
-    ax.text(0.9, 0.8, figlabel, ha='right', va='center', transform = ax.transAxes)
+    ax.text(0.9, 0.9, figlabel, ha='right', va='top', transform = ax.transAxes)
     
-    return {'alpha': alpha, 'beta': beta, 'rsq': r_squared}
+#    return {'alpha': alpha, 'beta': beta, 'rsq': r_squared}
 
-def calculate_burst_prob(bursts):
-    bins = np.arange(min(bursts), max(bursts))
-    hist=np.histogram(bursts, bins=bins, density=True)
-    cumsum=np.cumsum(hist[0])
 
-    x = hist[1][1:]
-    y = [1-val for val in cumsum]
-    
-    return x, y
-
-def weib_davis(x, alpha, beta): 
-    return (np.exp(-(alpha*x)**beta))
-
-def fit_weibull(xdata, ydata):
-    x0=np.array([0.1, 1])
-    fit=opt.curve_fit(weib_davis, xdata, ydata, x0)
-    alpha=fit[0][0]
-    beta=fit[0][1]
-    slope, intercept, r_value, p_value, std_err = stats.linregress(ydata, weib_davis(xdata, alpha, beta))
-    r_squared=r_value**2
-    
-    return alpha, beta, r_squared
 
 root = Tk()
 
