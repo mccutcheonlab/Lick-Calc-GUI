@@ -1,4 +1,4 @@
-name: lickcalc13b
+name: lickcalc13
 channels:
   - defaults
 dependencies:
@@ -41,4 +41,3 @@ dependencies:
   - xlsxwriter=1.2.1=py_0
   - zlib=1.2.11=h62dcd97_3
 prefix: C:\ProgramData\Anaconda3\envs\lickcalc13b
-
