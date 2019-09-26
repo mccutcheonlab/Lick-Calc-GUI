@@ -1,0 +1,38 @@
+***Notes on creating executable file with pyinstaller***
+
+install pyinstaller (pip install pyinstaller) )installed into lickcalc environment
+navigate to appropriate directory and run
+pyinstaller lickcalcGUI.py
+
+try this first to see if it works
+
+then to make single file and windowed run
+
+pyinstaller --onefile --windowed lickcalcGUI
+
+may not want --onefile or --windowed options as they take longer to load.
+
+maybe best option is --onefile but NOT --windowed so that at least the console window pops up
+
+--icon='iconfile.ico'
+
+***
+Use this line to make .exe, file will be in dist folder
+
+pyinstaller --onefile --icon=lickcalc-Icon.ico lickcalcGUI.py
+
+***Notes on installing environment and running from command line***
+
+Install Anaconda
+Create environment using 'conda env create -f environment.yml'
+Activate environment using 'conda activate lickcalc13'
+Run GUI using 'python lickcalcGUI.py'
+
+
+***Notes on environments for development***
+Change first line of environment.yml to create newly-named environment (e.g. lickcalc14dev)
+Install additional programs as required (e.g. spyder and other packages)
+When GUI is ready for release, attempt creating new environment using e.g 'conda create -n lickcalc14 python=3.7 numpy matplotlib scipy xlsxwriter'
+Try running GUI using 'python lickcalcGUI.py'
+If it works, write to environment.yml file (conda env export > environment.yml)
+Then, install pyinstaller using 'pip install pyinstaller' and follow instructions above to make .exe
