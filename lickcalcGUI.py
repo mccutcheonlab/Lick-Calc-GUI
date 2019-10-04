@@ -65,7 +65,7 @@ class Window(Frame):
         
         self.outputlbl = ttk.Label(self, text='Output Parameters', style='header.TLabel')
         self.suffixlbl = ttk.Label(self, text='File suffix')
-        self.aboutlbl = ttk.Label(self, text='LickCalc-1.3 by J McCutcheon')
+        self.aboutlbl = ttk.Label(self, text='LickCalc-1.4 by J McCutcheon')
   
         #Set up Entry variables
         self.shortfilename = StringVar(self.master)
