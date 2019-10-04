@@ -54,6 +54,9 @@ class Window(Frame):
         self.calcparamslbl = ttk.Label(self, text='Calculator Parameters', style='header.TLabel')
         self.graphparamslbl = ttk.Label(self, text='Graph Parameters', style='header.TLabel')
         
+        self.fileformatlbl = ttk.Label(self, text='File Format')
+        self.headerrowslbl = ttk.Label(self, text='Header Rows')
+        
         self.onsetlbl = ttk.Label(self, text='Onset')
         self.offsetlbl = ttk.Label(self, text='Offset')
         self.IBthresholdlbl = ttk.Label(self, text='Interburst threshold')
@@ -71,6 +74,10 @@ class Window(Frame):
         self.shortfilename = StringVar(self.master)
         self.shortfilename.set('No file loaded')
         self.filenamelbl = ttk.Label(self, textvariable=self.shortfilename)
+        
+        self.headerrows = StringVar(self.master)
+        self.headerrowsField = ttk.Entry(self, textvariable=self.headerrows)
+        self.headerrowsField.insert(END, '0')
         
         self.IBthreshold = StringVar(self.master)
         self.IRthreshold = StringVar(self.master)
@@ -90,6 +97,10 @@ class Window(Frame):
         self.suffixField.insert(END,'')
         
         # Set up Dropdown buttons
+        self.FILEOPTIONS = ['Med Associates', '.txt', '.csv', 'DD Lab']
+        self.fileformat = StringVar(self.master)
+        self.fileformatMenu = ttk.OptionMenu(self, self.fileformat, *self.FILEOPTIONS)
+   
         self.OPTIONS = ['None']
         self.onset = StringVar(self.master)
         self.onsetButton = ttk.OptionMenu(self, self.onset, *self.OPTIONS)    
@@ -106,7 +117,7 @@ class Window(Frame):
         self.plotburstprobButton = ttk.Checkbutton(self, variable=self.plotburstprob, onvalue=True)
         
         # Set up Buttons
-        self.loadmedButton = ttk.Button(self, text='Load Med File', command=self.openmedfile)
+        self.loadfileButton = ttk.Button(self, text='Load File', command=self.openfile)
         self.loadcsvButton = ttk.Button(self, text='Load CSV/txt File', command=self.opencsvfile)
         self.analyzeButton = ttk.Button(self, text='Analyze Data', command=self.analyze)
         self.prevButton = ttk.Button(self, text='Previous', command=lambda: self.load_adj_files(delta=-1))
@@ -121,12 +132,17 @@ class Window(Frame):
         self.fileparamslbl.grid(column=0, row=0, columnspan=2)
         self.calcparamslbl.grid(column=2, row=0, columnspan=2)
         self.graphparamslbl.grid(column=4, row=0, columnspan=2)
+ 
+        self.fileformatlbl.grid(column=0, row=1, sticky=E)
+        self.fileformatMenu.grid(column=1, row=1, sticky=(W,E))
         
-        self.loadmedButton.grid(column=0, row=1, sticky=(W,E))
-        self.loadcsvButton.grid(column=1, row=1, sticky=(W,E))
-        self.filenamelbl.grid(column=0, row=2, columnspan=2, sticky=(W,E))
-        self.prevButton.grid(column=0, row=3)
-        self.nextButton.grid(column=1, row=3)
+        self.headerrowslbl.grid(column=0, row=2, sticky=E)
+        self.headerrowsField.grid(column=1, row=2, sticky=(W,E))
+        
+        self.loadfileButton.grid(column=0, row=3, columnspan=2, sticky=(W,E))
+
+        self.prevButton.grid(column=0, row=4, sticky=(W,E))
+        self.nextButton.grid(column=1, row=4, sticky=(W,E))
 
         self.onsetlbl.grid(column=2, row=1, sticky=E)
         self.offsetlbl.grid(column=2, row=2, sticky=E)
@@ -162,10 +178,18 @@ class Window(Frame):
 
         self.f2.grid(column=0, row=5, columnspan=7, sticky=(N,S,E,W))
                     
-    def openmedfile(self):
-        self.filename = filedialog.askopenfilename(initialdir=currdir, title='Select a Med PC file.')
+    def openfile(self):
+        self.filename = filedialog.askopenfilename(initialdir=currdir, title='Select a file.')
         self.list_of_files = []
-        self.loadmedfile()
+        ff = self.fileformat.get()
+        if ff == 'Med Associates':
+            self.loadmedfile()
+        elif ff == '.txt':
+            self.loadcsvfile()
+        elif ff == 'DD Lab':
+            print('DD lab')
+        else:
+            print('Not valid format')
         
     def loadmedfile(self):        
         try:
