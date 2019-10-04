@@ -23,6 +23,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 import ntpath
 import csv
 import xlsxwriter as xl
+import datetime
 
 # Main class for GUI
 class Window(Frame):
@@ -77,7 +78,7 @@ class Window(Frame):
         
         self.headerrows = StringVar(self.master)
         self.headerrowsField = ttk.Entry(self, textvariable=self.headerrows)
-        self.headerrowsField.insert(END, '0')
+        self.headerrowsField.insert(END, '5')
         
         self.IBthreshold = StringVar(self.master)
         self.IRthreshold = StringVar(self.master)
@@ -99,7 +100,7 @@ class Window(Frame):
         # Set up Dropdown buttons
         self.FILEOPTIONS = ['Med Associates', '.txt', '.csv', 'DD Lab']
         self.fileformat = StringVar(self.master)
-        self.fileformatMenu = ttk.OptionMenu(self, self.fileformat, *self.FILEOPTIONS)
+        self.fileformatMenu = ttk.OptionMenu(self, self.fileformat, self.FILEOPTIONS[0], *self.FILEOPTIONS)
    
         self.OPTIONS = ['None']
         self.onset = StringVar(self.master)
@@ -187,7 +188,7 @@ class Window(Frame):
         elif ff == '.txt':
             self.loadcsvfile()
         elif ff == 'DD Lab':
-            print('DD lab')
+            self.loadDDfile()
         else:
             print('Not valid format')
         
@@ -239,7 +240,34 @@ class Window(Frame):
         
         self.currentfiletype = 'csv'
         self.shortfilename.set(ntpath.basename(self.filename))
+    
+    def loadDDfile(self):
+        try:
+            header=int(self.headerrows.get())
+            f = open(self.filename, 'r')
+            vals = f.readlines()[header:]
+            f.close()
+            ts = [datetime.datetime.strptime(val, '%H:%M:%S.%f\n') for val in vals]
+            delta = [t-ts[idx-1] for idx, t in enumerate(ts[1:])]
+            delta_array = np.array([d.total_seconds() for d in delta])
+            dayadvance = np.where(delta_array < 0)[0][0]
+            ts_corr = ts[:dayadvance+1] + [t + datetime.timedelta(days=1) for t in ts[dayadvance+1:]]
+            t0=ts_corr[0]
+            self.loaded_vars = {'t': [(t - t0).total_seconds() for t in ts_corr]}
+
+        except:
+            alert('Cannot load data from selected file. Is it in the right format?')
+            print("Error:", sys.exc_info()[0])
+            return
         
+        try:
+            self.updateOptionMenu()
+        except TypeError:
+            alert("No valid variables to analyze (e.g. arrays with more than one value")
+            
+        self.currentfiletype = 'dd'
+        self.shortfilename.set(ntpath.basename(self.filename))
+
     def updateOptionMenu(self):
         options = [x+': '+str(len(self.loaded_vars[x])) for x in self.loaded_vars]
         self.onsetButton = ttk.OptionMenu(self, self.onset, *options).grid(column=3, row=1, sticky=(W,E))
@@ -258,6 +286,8 @@ class Window(Frame):
                 self.loadmedfile()
             if self.currentfiletype == 'csv':
                 self.loadcsvfile()
+            if self.currentfiletype == 'dd':
+                self.loadDDfile()
         except:
             alert('Problem loading next file. It might be at the end of the folder or in the wrong format.')
     
