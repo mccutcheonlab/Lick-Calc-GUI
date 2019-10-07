@@ -69,7 +69,7 @@ class Window(Frame):
         
         self.outputlbl = ttk.Label(self, text='Output Parameters', style='header.TLabel')
         self.suffixlbl = ttk.Label(self, text='File suffix')
-        self.aboutlbl = ttk.Label(self, text='LickCalc-1.4 by J McCutcheon')
+        self.aboutlbl = ttk.Label(self, text='LickCalc-1.4.1 by J McCutcheon')
   
         #Set up Entry variables
         self.shortfilename = StringVar(self.master)
@@ -247,13 +247,14 @@ class Window(Frame):
             f = open(self.filename, 'r')
             vals = f.readlines()[header:]
             f.close()
-            ts = [datetime.datetime.strptime(val, '%H:%M:%S.%f\n') for val in vals]
+            ts = [tstamp_to_tdate(val, '%H:%M:%S.%f\n') for val in vals]
             delta = [t-ts[idx-1] for idx, t in enumerate(ts[1:])]
             delta_array = np.array([d.total_seconds() for d in delta])
-            dayadvance = np.where(delta_array < 0)[0][0]
-            ts_corr = ts[:dayadvance+1] + [t + datetime.timedelta(days=1) for t in ts[dayadvance+1:]]
-            t0=ts_corr[0]
-            self.loaded_vars = {'t': [(t - t0).total_seconds() for t in ts_corr]}
+            if min(delta_array) < 0: #tests if timestamps span midnight
+                dayadvance = np.where(delta_array < 0)[0][0]
+                ts = ts[:dayadvance+1] + [t + datetime.timedelta(days=1) for t in ts[dayadvance+1:]]
+            t0=ts[0]
+            self.loaded_vars = {'t': [(t - t0).total_seconds() for t in ts]}
 
         except:
             alert('Cannot load data from selected file. Is it in the right format?')
@@ -518,6 +519,12 @@ def isnumeric(s):
         return x
     except ValueError:
         return float('nan')
+    
+def tstamp_to_tdate(timestamp, fmt):
+    try:
+        return datetime.datetime.strptime(timestamp, fmt)
+    except ValueError:
+        return
 
 """
 This function will calculate data for bursts from a train of licks. The threshold
