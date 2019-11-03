@@ -69,7 +69,7 @@ class Window(Frame):
         
         self.outputlbl = ttk.Label(self, text='Output Parameters', style='header.TLabel')
         self.suffixlbl = ttk.Label(self, text='File suffix')
-        self.aboutlbl = ttk.Label(self, text='LickCalc-1.4.1 by J McCutcheon')
+        self.aboutlbl = ttk.Label(self, text='LickCalc-1.4.2 by J McCutcheon')
   
         #Set up Entry variables
         self.shortfilename = StringVar(self.master)
@@ -98,7 +98,7 @@ class Window(Frame):
         self.suffixField.insert(END,'')
         
         # Set up Dropdown buttons
-        self.FILEOPTIONS = ['Med Associates', '.txt', '.csv', 'DD Lab']
+        self.FILEOPTIONS = ['Med Associates', '.txt', '.csv', 'DD Lab', 'SF Lab']
         self.fileformat = StringVar(self.master)
         self.fileformatMenu = ttk.OptionMenu(self, self.fileformat, self.FILEOPTIONS[0], *self.FILEOPTIONS)
    
@@ -119,7 +119,6 @@ class Window(Frame):
         
         # Set up Buttons
         self.loadfileButton = ttk.Button(self, text='Load File', command=self.openfile)
-        self.loadcsvButton = ttk.Button(self, text='Load CSV/txt File', command=self.opencsvfile)
         self.analyzeButton = ttk.Button(self, text='Analyze Data', command=self.analyze)
         self.prevButton = ttk.Button(self, text='Previous', command=lambda: self.load_adj_files(delta=-1))
         self.nextButton = ttk.Button(self, text='Next', command=lambda: self.load_adj_files(delta=1))
@@ -189,6 +188,8 @@ class Window(Frame):
             self.loadcsvfile()
         elif ff == 'DD Lab':
             self.loadDDfile()
+        elif ff == 'SF Lab':
+            self.loadmedfile()
         else:
             print('Not valid format')
         
@@ -201,7 +202,11 @@ class Window(Frame):
         except:
             alert("Problem reading file and extracting data. File may not be properly formatted - see Help for advice.")
             return
-         
+        if self.fileformat.get() == 'SF Lab':
+            new_vars = {}
+            for v in self.loaded_vars:
+                new_vars[v] = [x/10 for x in self.loaded_vars[v]]
+            self.loaded_vars = new_vars
         try:
             self.updateOptionMenu()
         except TypeError:
@@ -209,12 +214,7 @@ class Window(Frame):
         
         self.currentfiletype = 'med'
         self.shortfilename.set(ntpath.basename(self.filename))
-        
-    def opencsvfile(self):
-        self.filename = filedialog.askopenfilename(initialdir=currdir, title='Select a CSV file.')
-        self.list_of_files = []
-        self.loadcsvfile()
-        
+         
     def loadcsvfile(self):               
         try:            
             with open(self.filename, newline='') as myFile:
